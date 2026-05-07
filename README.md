@@ -6,8 +6,12 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 
 - Windows executable release asset:
   - `coco-connect-hdl.exe`
-- HDL SKILL bridge script:
+- HDL SKILL bridge scripts:
   - `skill/bridge.il`
+  - `skill/util.il`
+  - `skill/hdl.il`
+  - `skill/list.il`
+  - `skill/highlight.il`
 
 ## Bridge Commands
 
@@ -15,6 +19,9 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `status`
 - `list_nets`
 - `list_parts`
+- `highlight_net <NET_NAME>`
+- `highlight_part <REFDES>`
+- `clear_highlight`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -35,8 +42,12 @@ For an IPC base name such as `coco-hdl`, the bridge uses:
 Manual SKILL startup in the HDL CommandConsole:
 
 ```skill
-system(cnskill -i -nongraph \"C:\\path\\to\\bridge.il\")
+system("cmd /c cd /d C:\\path\\to\\skill && start /b cnskill.exe -i -nongraph bridge.il")
 ```
+
+`bridge.il` loads the other `*.il` files from `_coco_bridge_dir`; by default
+that is the current directory. If a wrapper loads `bridge.il` by absolute path,
+set `_coco_bridge_dir` first.
 
 When Chat CoCo creates a generated bridge wrapper, it sets:
 
@@ -44,6 +55,7 @@ When Chat CoCo creates a generated bridge wrapper, it sets:
 (setq _coco_pipe_base "coco-hdl-<INSTANCE_ID>")
 (setq _coco_instance_id "<INSTANCE_ID>")
 (setq _coco_work_dir "C:\\Users\\<USER>\\AppData\\Local\\Temp")
+(setq _coco_bridge_dir "C:\\path\\to\\skill")
 (load "C:\\path\\to\\bridge.il")
 ```
 
@@ -62,6 +74,9 @@ coco-connect-hdl ping
 coco-connect-hdl session-status
 coco-connect-hdl list-nets
 coco-connect-hdl list-parts
+coco-connect-hdl highlight net DDR_A0
+coco-connect-hdl highlight part U3
+coco-connect-hdl clear-highlight
 ```
 
 Session-scoped IPC examples:
@@ -71,6 +86,9 @@ coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 list-nets
 coco-connect-hdl --instance-id HDL_1 list-parts
+coco-connect-hdl --instance-id HDL_1 highlight net DDR_A0
+coco-connect-hdl --instance-id HDL_1 highlight part U3
+coco-connect-hdl --instance-id HDL_1 clear-highlight
 ```
 
 ## Request Format
@@ -84,7 +102,8 @@ op
 arg
 ```
 
-`arg` is currently unused for the public HDL commands.
+`arg` is the target name for `highlight_net` and `highlight_part`; it is empty
+for the other public HDL commands.
 
 ## Response Format
 
@@ -101,6 +120,8 @@ Success examples:
 <id>	ok	1|
 <id>	ok	DDR_A0|DDR_A1|GND|VCC
 <id>	ok	C1|R2|U3
+<id>	ok	{"status":"highlighted","kind":"net","target":"DDR_A0","selected":1}
+<id>	ok	{"status":"cleared"}
 ```
 
 Error example:
@@ -117,4 +138,8 @@ The Rust CLI and MCP server convert successful payloads into JSON for callers:
 
 ```json
 ["DDR_A0","DDR_A1","GND","VCC"]
+```
+
+```json
+{"status":"highlighted","kind":"net","target":"DDR_A0","selected":1}
 ```
