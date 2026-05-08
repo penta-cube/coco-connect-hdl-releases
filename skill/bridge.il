@@ -31,8 +31,7 @@
 
 (load (_coco_module_file "util.il"))
 (load (_coco_module_file "hdl.il"))
-(load (_coco_module_file "list.il"))
-(load (_coco_module_file "highlight.il"))
+(load (_coco_module_file "read_model.il"))
 
 ;;; File paths
 
@@ -111,11 +110,7 @@
               (cond
                 ((equal op "ping") (_coco_op_ping))
                 ((equal op "status") (_coco_op_status))
-                ((equal op "list_nets") (_coco_op_list_nets))
-                ((equal op "list_parts") (_coco_op_list_parts))
-                ((equal op "highlight_net") (_coco_op_highlight_net arg))
-                ((equal op "highlight_part") (_coco_op_highlight_part arg))
-                ((equal op "clear_highlight") (_coco_op_clear_highlight))
+                ((equal op "read_model") (_coco_op_read_model))
                 (t (error "UNKNOWN_OP" (_coco_to_string op))))
               t)))
       (if result
