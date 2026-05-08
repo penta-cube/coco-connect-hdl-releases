@@ -10,18 +10,13 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/bridge.il`
   - `skill/util.il`
   - `skill/hdl.il`
-  - `skill/list.il`
-  - `skill/highlight.il`
+  - `skill/read_model.il`
 
 ## Bridge Commands
 
 - `ping`
 - `status`
-- `list_nets`
-- `list_parts`
-- `highlight_net <NET_NAME>`
-- `highlight_part <REFDES>`
-- `clear_highlight`
+- `read_model`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -72,11 +67,7 @@ coco-connect-hdl --pipe-name coco-hdl-<INSTANCE_ID> status
 coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
-coco-connect-hdl list-nets
-coco-connect-hdl list-parts
-coco-connect-hdl highlight net DDR_A0
-coco-connect-hdl highlight part U3
-coco-connect-hdl clear-highlight
+coco-connect-hdl read-model
 ```
 
 Session-scoped IPC examples:
@@ -84,11 +75,7 @@ Session-scoped IPC examples:
 ```text
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
-coco-connect-hdl --instance-id HDL_1 list-nets
-coco-connect-hdl --instance-id HDL_1 list-parts
-coco-connect-hdl --instance-id HDL_1 highlight net DDR_A0
-coco-connect-hdl --instance-id HDL_1 highlight part U3
-coco-connect-hdl --instance-id HDL_1 clear-highlight
+coco-connect-hdl --instance-id HDL_1 read-model
 ```
 
 ## Request Format
@@ -102,8 +89,7 @@ op
 arg
 ```
 
-`arg` is the target name for `highlight_net` and `highlight_part`; it is empty
-for the other public HDL commands.
+`arg` is empty for the public HDL commands.
 
 ## Response Format
 
@@ -118,10 +104,7 @@ Success examples:
 ```text
 <id>	ok	pong
 <id>	ok	1|
-<id>	ok	DDR_A0|DDR_A1|GND|VCC
-<id>	ok	C1|R2|U3
-<id>	ok	{"status":"highlighted","kind":"net","target":"DDR_A0","selected":1}
-<id>	ok	{"status":"cleared"}
+<id>	ok	{"page":{"name":"page1"},"components":[],"wires":[]}
 ```
 
 Error example:
@@ -137,9 +120,5 @@ The Rust CLI and MCP server convert successful payloads into JSON for callers:
 ```
 
 ```json
-["DDR_A0","DDR_A1","GND","VCC"]
-```
-
-```json
-{"status":"highlighted","kind":"net","target":"DDR_A0","selected":1}
+{"page":{"name":"page1"},"components":[],"wires":[]}
 ```
