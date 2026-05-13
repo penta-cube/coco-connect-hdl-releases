@@ -11,6 +11,8 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/util.il`
   - `skill/hdl.il`
   - `skill/read_model.il`
+  - `skill/component_report.il`
+  - `skill/schematic_validation.il`
 
 ## Bridge Commands
 
@@ -18,6 +20,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `status`
 - `read_model`
 - `component_report`
+- `schematic_validation`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -70,6 +73,7 @@ coco-connect-hdl ping
 coco-connect-hdl session-status
 coco-connect-hdl read-model
 coco-connect-hdl component-report
+coco-connect-hdl schematic-validation
 ```
 
 Session-scoped IPC examples:
@@ -79,6 +83,7 @@ coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 read-model
 coco-connect-hdl --instance-id HDL_1 component-report
+coco-connect-hdl --instance-id HDL_1 schematic-validation
 ```
 
 ## Request Format
@@ -109,6 +114,7 @@ Success examples:
 <id>	ok	1|
 <id>	ok	{"page":{"name":"page1"},"components":[],"wires":[]}
 <id>	ok	{"page":{"name":"page1"},"components":[{"refdes":"U1","part_name":"IC","value":"","device":"","footprint":"","library_name":"logic","source_properties":[],"properties":[]}]}
+<id>	ok	{"page":{"name":"page1"},"summary":{"component_count":1,"issue_count":1,"error_count":1,"warning_count":0,"info_count":0},"rules":["missing_refdes","placeholder_refdes","duplicate_refdes","missing_footprint","placeholder_value","placeholder_device"],"issues":[{"severity":"error","rule_id":"missing_footprint","object_dbid":"1","refdes":"U1","page":"page1","property_name":"footprint","current_value":"","message":"No footprint alias value was found"}]}
 ```
 
 Error example:
@@ -129,4 +135,8 @@ The Rust CLI and MCP server convert successful payloads into JSON for callers:
 
 ```json
 {"page":{"name":"page1"},"components":[{"refdes":"U1","part_name":"IC","value":"","device":"","footprint":"","library_name":"logic","source_properties":[],"properties":[]}]}
+```
+
+```json
+{"page":{"name":"page1"},"summary":{"component_count":1,"issue_count":1,"error_count":1,"warning_count":0,"info_count":0},"rules":["missing_refdes","placeholder_refdes","duplicate_refdes","missing_footprint","placeholder_value","placeholder_device"],"issues":[{"severity":"error","rule_id":"missing_footprint","object_dbid":"1","refdes":"U1","page":"page1","property_name":"footprint","current_value":"","message":"No footprint alias value was found"}]}
 ```
