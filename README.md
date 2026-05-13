@@ -17,6 +17,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `ping`
 - `status`
 - `read_model`
+- `component_report`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -68,6 +69,7 @@ coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
 coco-connect-hdl read-model
+coco-connect-hdl component-report
 ```
 
 Session-scoped IPC examples:
@@ -76,6 +78,7 @@ Session-scoped IPC examples:
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 read-model
+coco-connect-hdl --instance-id HDL_1 component-report
 ```
 
 ## Request Format
@@ -105,6 +108,7 @@ Success examples:
 <id>	ok	pong
 <id>	ok	1|
 <id>	ok	{"page":{"name":"page1"},"components":[],"wires":[]}
+<id>	ok	{"page":{"name":"page1"},"components":[{"refdes":"U1","part_name":"IC","value":"","device":"","footprint":"","library_name":"logic","source_properties":[],"properties":[]}]}
 ```
 
 Error example:
@@ -121,4 +125,8 @@ The Rust CLI and MCP server convert successful payloads into JSON for callers:
 
 ```json
 {"page":{"name":"page1"},"components":[],"wires":[]}
+```
+
+```json
+{"page":{"name":"page1"},"components":[{"refdes":"U1","part_name":"IC","value":"","device":"","footprint":"","library_name":"logic","source_properties":[],"properties":[]}]}
 ```

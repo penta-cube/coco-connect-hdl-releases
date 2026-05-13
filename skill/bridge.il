@@ -111,6 +111,7 @@
                 ((equal op "ping") (_coco_op_ping))
                 ((equal op "status") (_coco_op_status))
                 ((equal op "read_model") (_coco_op_read_model))
+                ((equal op "component_report") (_coco_op_component_report))
                 (t (error "UNKNOWN_OP" (_coco_to_string op))))
               t)))
       (if result
