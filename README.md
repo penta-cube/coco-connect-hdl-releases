@@ -11,12 +11,18 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/util.il`
   - `skill/hdl.il`
   - `skill/read_model.il`
+  - `skill/component_report.il`
+  - `skill/schematic_validation.il`
+  - `skill/component_detail.il`
 
 ## Bridge Commands
 
 - `ping`
 - `status`
 - `read_model`
+- `component_report`
+- `schematic_validation`
+- `component_detail`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -68,6 +74,9 @@ coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
 coco-connect-hdl read-model
+coco-connect-hdl component-report
+coco-connect-hdl schematic-validation
+coco-connect-hdl component-detail U1
 ```
 
 Session-scoped IPC examples:
@@ -76,6 +85,9 @@ Session-scoped IPC examples:
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 read-model
+coco-connect-hdl --instance-id HDL_1 component-report
+coco-connect-hdl --instance-id HDL_1 schematic-validation
+coco-connect-hdl --instance-id HDL_1 component-detail U1
 ```
 
 ## Request Format
@@ -89,7 +101,8 @@ op
 arg
 ```
 
-`arg` is empty for the public HDL commands.
+`arg` is empty for most public HDL commands. For `component_detail`, `arg` may
+contain a RefDes such as `U1`; empty means all active-page components.
 
 ## Response Format
 
@@ -105,6 +118,9 @@ Success examples:
 <id>	ok	pong
 <id>	ok	1|
 <id>	ok	{"page":{"name":"page1"},"components":[],"wires":[]}
+<id>	ok	{"page":{"name":"page1"},"components":[{"refdes":"U1","part_name":"IC","value":"","device":"","footprint":"","library_name":"logic","source_properties":[],"properties":[]}]}
+<id>	ok	{"page":{"name":"page1"},"summary":{"component_count":1,"issue_count":1,"error_count":1,"warning_count":0,"info_count":0},"rules":["missing_refdes","placeholder_refdes","duplicate_refdes","missing_footprint","placeholder_value","placeholder_device"],"issues":[{"severity":"error","rule_id":"missing_footprint","object_dbid":"1","refdes":"U1","page":"page1","property_name":"footprint","current_value":"","message":"No footprint alias value was found"}]}
+<id>	ok	{"refdes":"U1","page":{"name":"page1"},"components":[{"refdes":"U1","dbid":"1","component_name":"IC","library_name":"logic","x":"100","y":"200","angle":"0","mirror":"","page":{"name":"page1"},"pins":[{"name":"1","x":"90","y":"200","properties":[],"connected_wire_dbid":"","net_name":""}],"properties":[]}]}
 ```
 
 Error example:
@@ -121,4 +137,16 @@ The Rust CLI and MCP server convert successful payloads into JSON for callers:
 
 ```json
 {"page":{"name":"page1"},"components":[],"wires":[]}
+```
+
+```json
+{"page":{"name":"page1"},"components":[{"refdes":"U1","part_name":"IC","value":"","device":"","footprint":"","library_name":"logic","source_properties":[],"properties":[]}]}
+```
+
+```json
+{"page":{"name":"page1"},"summary":{"component_count":1,"issue_count":1,"error_count":1,"warning_count":0,"info_count":0},"rules":["missing_refdes","placeholder_refdes","duplicate_refdes","missing_footprint","placeholder_value","placeholder_device"],"issues":[{"severity":"error","rule_id":"missing_footprint","object_dbid":"1","refdes":"U1","page":"page1","property_name":"footprint","current_value":"","message":"No footprint alias value was found"}]}
+```
+
+```json
+{"refdes":"U1","page":{"name":"page1"},"components":[{"refdes":"U1","dbid":"1","component_name":"IC","library_name":"logic","x":"100","y":"200","angle":"0","mirror":"","page":{"name":"page1"},"pins":[{"name":"1","x":"90","y":"200","properties":[],"connected_wire_dbid":"","net_name":""}],"properties":[]}]}
 ```
