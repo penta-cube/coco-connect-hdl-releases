@@ -34,6 +34,7 @@
 (load (_coco_module_file "read_model.il"))
 (load (_coco_module_file "component_report.il"))
 (load (_coco_module_file "schematic_validation.il"))
+(load (_coco_module_file "component_detail.il"))
 
 ;;; File paths
 
@@ -115,6 +116,7 @@
                 ((equal op "read_model") (_coco_op_read_model))
                 ((equal op "component_report") (_coco_op_component_report))
                 ((equal op "schematic_validation") (_coco_op_schematic_validation))
+                ((equal op "component_detail") (_coco_op_component_detail arg))
                 (t (error "UNKNOWN_OP" (_coco_to_string op))))
               t)))
       (if result
