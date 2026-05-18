@@ -38,9 +38,9 @@
         (footprint "")
         (xy "")
         (value ""))
-    (setq props (_coco_component_props_for_refdes handle refdes))
+    (setq props (_coco_snapshot_props_for_refdes handle refdes))
     (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
-    (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache))
+    (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_page_snapshot_component_tuples))
     (foreach prop props
       (when (equal owner_dbid "")
         (setq owner_dbid (_coco_prop_owner_dbid_string prop))))
@@ -68,8 +68,7 @@
 
 (defun _coco_component_report_components_json_for_page (handle)
   (let ((items nil))
-    (setq _coco_component_tuple_cache (_coco_component_tuples handle))
-    (foreach refdes (_coco_component_refdes_list handle)
+    (foreach refdes _coco_page_snapshot_refdes_list
       (setq items (append items (list (_coco_component_report_json_from_refdes handle refdes)))))
     items))
 
@@ -78,8 +77,8 @@
 
 (defun _coco_component_report_page_item (handle page_name)
   (let ()
-    (setq _coco_component_report_current_page_json
-      (_coco_page_json_from_name _coco_component_report_active_dwg page_name))
+    (_coco_prepare_page_snapshot handle _coco_component_report_active_dwg page_name)
+    (setq _coco_component_report_current_page_json _coco_page_snapshot_page_json)
     (setq _coco_component_report_items_acc
       (append _coco_component_report_items_acc
         (_coco_component_report_components_json_for_page handle)))))

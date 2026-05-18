@@ -108,9 +108,9 @@
         (footprint "")
         (value "")
         (device ""))
-    (setq props (_coco_component_props_for_refdes handle refdes))
+    (setq props (_coco_snapshot_props_for_refdes handle refdes))
     (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
-    (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache))
+    (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_page_snapshot_component_tuples))
     (foreach prop props
       (when (equal owner_dbid "")
         (setq owner_dbid (_coco_prop_owner_dbid_string prop))))
@@ -169,12 +169,13 @@
 (setq _coco_validation_issues_acc nil)
 (setq _coco_validation_records_acc nil)
 (setq _coco_validation_refdes_counts nil)
+(setq _coco_validation_active_dwg nil)
 
 (defun _coco_validation_page_item (handle page_name)
   (let ((refdes_list nil)
         (record nil))
-    (setq _coco_component_tuple_cache (_coco_component_tuples handle))
-    (setq refdes_list (_coco_component_refdes_list handle))
+    (_coco_prepare_page_snapshot handle _coco_validation_active_dwg page_name)
+    (setq refdes_list _coco_page_snapshot_refdes_list)
     (setq _coco_validation_component_count
       (plus _coco_validation_component_count (length refdes_list)))
     (foreach refdes refdes_list
@@ -187,6 +188,7 @@
         (page_json "")
         (rules_json ""))
     (setq active_dwg (_coco_active_dwg handle))
+    (setq _coco_validation_active_dwg active_dwg)
     (setq page_json (_coco_active_page_json handle))
     (setq _coco_validation_component_count 0)
     (setq _coco_validation_issues_acc nil)

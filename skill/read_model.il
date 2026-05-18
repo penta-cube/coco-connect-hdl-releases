@@ -212,6 +212,61 @@
         (_coco_json_string_field "page" (_coco_page_number_from_name page_name))
         (_coco_json_string_field "kind" (safeStr (_coco_nth 10 dwg)))))))
 
+(setq _coco_page_snapshot_page_json "")
+(setq _coco_page_snapshot_component_tuples nil)
+(setq _coco_page_snapshot_wire_tuples nil)
+(setq _coco_page_snapshot_refdes_list nil)
+(setq _coco_page_snapshot_net_names nil)
+(setq _coco_page_snapshot_props_cache nil)
+
+(defun _coco_snapshot_cache_entry (refdes props)
+  (list refdes props))
+
+(defun _coco_snapshot_cache_refdes (entry)
+  (car entry))
+
+(defun _coco_snapshot_cache_props (entry)
+  (_coco_nth 1 entry))
+
+(defun _coco_reset_page_snapshot ()
+  (setq _coco_page_snapshot_page_json "")
+  (setq _coco_page_snapshot_component_tuples nil)
+  (setq _coco_page_snapshot_wire_tuples nil)
+  (setq _coco_page_snapshot_refdes_list nil)
+  (setq _coco_page_snapshot_net_names nil)
+  (setq _coco_page_snapshot_props_cache nil)
+  t)
+
+(defun _coco_prepare_page_snapshot (handle dwg page_name)
+  (_coco_reset_page_snapshot)
+  (setq _coco_page_snapshot_page_json (_coco_page_json_from_name dwg page_name))
+  (setq _coco_page_snapshot_component_tuples (_coco_component_tuples handle))
+  (setq _coco_page_snapshot_refdes_list (_coco_component_refdes_list handle))
+  (setq _coco_page_snapshot_net_names
+    (_coco_collect_values_from_find handle "find sig_name=*" (list "SIG_NAME")))
+  t)
+
+(defun _coco_snapshot_props_for_refdes (handle refdes)
+  (let ((found nil)
+        (props nil))
+    (foreach entry _coco_page_snapshot_props_cache
+      (when (and (not found)
+                 (equal (_coco_snapshot_cache_refdes entry) refdes))
+        (setq found (_coco_snapshot_cache_props entry))))
+    (if found
+      found
+      (progn
+        (setq props (_coco_component_props_for_refdes handle refdes))
+        (setq _coco_page_snapshot_props_cache
+          (append _coco_page_snapshot_props_cache
+            (list (_coco_snapshot_cache_entry refdes props))))
+        props))))
+
+(defun _coco_snapshot_wire_tuples (handle)
+  (when (not _coco_page_snapshot_wire_tuples)
+    (setq _coco_page_snapshot_wire_tuples (_coco_wire_tuples handle)))
+  _coco_page_snapshot_wire_tuples)
+
 (setq _coco_design_current_page_json "")
 
 (defun _coco_component_json_from_refdes (handle refdes)
@@ -223,9 +278,9 @@
         (footprint "")
         (xy "")
         (value ""))
-    (setq props (_coco_component_props_for_refdes handle refdes))
+    (setq props (_coco_snapshot_props_for_refdes handle refdes))
     (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
-    (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache))
+    (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_page_snapshot_component_tuples))
     (foreach prop props
       (when (equal owner_dbid "")
         (setq owner_dbid (_coco_prop_owner_dbid_string prop))))
@@ -264,8 +319,7 @@
 
 (defun _coco_components_json_for_page (handle)
   (let ((items nil))
-    (setq _coco_component_tuple_cache (_coco_component_tuples handle))
-    (foreach refdes (_coco_component_refdes_list handle)
+    (foreach refdes _coco_page_snapshot_refdes_list
       (setq items (append items (list (_coco_component_json_from_refdes handle refdes)))))
     items))
 
@@ -275,7 +329,8 @@
 
 (defun _coco_design_components_item (handle page_name)
   (let ()
-    (setq _coco_design_current_page_json (_coco_page_json_from_name _coco_design_active_dwg page_name))
+    (_coco_prepare_page_snapshot handle _coco_design_active_dwg page_name)
+    (setq _coco_design_current_page_json _coco_page_snapshot_page_json)
     (setq _coco_design_items_acc
       (append _coco_design_items_acc
         (_coco_components_json_for_page handle)))))
@@ -302,13 +357,14 @@
 
 (defun _coco_nets_json_for_page (handle)
   (let ((items nil))
-    (foreach net (_coco_collect_values_from_find handle "find sig_name=*" (list "SIG_NAME"))
+    (foreach net _coco_page_snapshot_net_names
       (setq items (append items (list (_coco_net_json net)))))
     items))
 
 (defun _coco_design_nets_item (handle page_name)
   (let ()
-    (setq _coco_design_current_page_json (_coco_page_json_from_name _coco_design_active_dwg page_name))
+    (_coco_prepare_page_snapshot handle _coco_design_active_dwg page_name)
+    (setq _coco_design_current_page_json _coco_page_snapshot_page_json)
     (setq _coco_design_items_acc
       (append _coco_design_items_acc
         (_coco_nets_json_for_page handle)))))
@@ -338,13 +394,14 @@
 
 (defun _coco_wires_json_for_page (handle)
   (let ((items nil))
-    (foreach wire (_coco_wire_tuples handle)
+    (foreach wire (_coco_snapshot_wire_tuples handle)
       (setq items (append items (list (_coco_wire_tuple_json wire)))))
     items))
 
 (defun _coco_design_wires_item (handle page_name)
   (let ()
-    (setq _coco_design_current_page_json (_coco_page_json_from_name _coco_design_active_dwg page_name))
+    (_coco_prepare_page_snapshot handle _coco_design_active_dwg page_name)
+    (setq _coco_design_current_page_json _coco_page_snapshot_page_json)
     (setq _coco_design_items_acc
       (append _coco_design_items_acc
         (_coco_wires_json_for_page handle)))))

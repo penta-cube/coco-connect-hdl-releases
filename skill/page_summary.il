@@ -126,8 +126,9 @@
         (symbol_names nil)
         (port_count 0))
     (_coco_send_cmd handle (sprintf nil "nmapedit %s;" page_name))
-    (setq component_tuples (_coco_component_tuples handle))
-    (setq net_names (_coco_collect_values_from_find handle "find sig_name=*" (list "SIG_NAME")))
+    (_coco_prepare_page_snapshot handle _coco_page_summary_active_dwg page_name)
+    (setq component_tuples _coco_page_snapshot_component_tuples)
+    (setq net_names _coco_page_snapshot_net_names)
     (setq symbol_names (_coco_unique_symbol_names component_tuples))
     (setq port_count (_coco_port_count_from_tuples component_tuples))
     (_coco_json_object
@@ -198,6 +199,7 @@
   (_coco_nth 1 entry))
 
 (setq _coco_page_counts_acc nil)
+(setq _coco_page_summary_active_dwg nil)
 
 (defun _coco_collect_page_counts_item (handle page_name)
   (setq _coco_page_counts_acc
@@ -280,6 +282,7 @@
     (setq dwg_info (_coco_safe_apply 'cnGetDwgInfo (list handle)))
     (when dwg_info
       (setq active_dwg (_coco_safe_apply 'cnFindActiveDwg (list dwg_info))))
+    (setq _coco_page_summary_active_dwg active_dwg)
     (setq active_page_hint (_coco_dwg_info_active_page dwg_info))
     (setq active_page_num (_coco_dwg_resolved_active_page active_dwg active_page_hint))
     (setq active_page_name (_coco_page_name_for_number handle active_dwg active_page_num))
