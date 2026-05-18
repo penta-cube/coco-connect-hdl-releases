@@ -111,71 +111,6 @@
         (setq count (add1 count))))
     count))
 
-(defun _coco_page_canonical_name (dwg page_num)
-  (sprintf nil "@%s.%s(%s):page%s"
-    (_coco_dwg_lib_name dwg)
-    (_coco_dwg_cell_name dwg)
-    (_coco_dwg_view_name dwg)
-    (safeStr page_num)))
-
-(defun _coco_page_name_list (dwg)
-  (let ((pages nil)
-        (page_num 1)
-        (total (_coco_dwg_total_pages dwg)))
-    (while (leqp page_num total)
-      (setq pages (append pages (list (_coco_page_canonical_name dwg page_num))))
-      (setq page_num (add1 page_num)))
-    pages))
-
-(defun _coco_unique_sorted_numbers (items)
-  (let ((result nil))
-    (foreach item items
-      (when (and item (not (member item result)))
-        (setq result (append result (list item)))))
-    result))
-
-(defun _coco_page_number_from_file_name (file_name)
-  (let ((value ""))
-    (when (and file_name
-               (rexMatchp "^page\\([1-9][0-9]*\\)[.]cs[ab]$" (lowerCase file_name)))
-      (setq value (rexSubstitute "\\1")))
-    value))
-
-(defun _coco_view_file_names (views)
-  (let ((result nil)
-        (view_info nil))
-    (setq view_info (if (and (listp views) (listp (car views))) (car views) views))
-    (setq result (car (errset (cnlGetViewFileNames view_info) nil)))
-    result))
-
-(defun _coco_design_page_names_from_files (handle dwg)
-  (let ((lib (_coco_dwg_lib_name dwg))
-        (cell (_coco_dwg_cell_name dwg))
-        (view (_coco_dwg_view_name dwg))
-        (vinfo nil)
-        (views nil)
-        (files nil)
-        (pages nil)
-        (page_num "")
-        (page_names nil))
-    (rexCompile "^page[1-9][0-9]*[.]cs[ab]$")
-    (setq vinfo (car (errset (cnlGetViewInfo handle (list (list lib cell view))) nil)))
-    (when vinfo
-      (setq views (car (errset (cnlGetViews vinfo) nil))))
-    (when views
-      (setq files (_coco_view_file_names views)))
-    (foreach file files
-      (when (stringp file)
-        (setq page_num (_coco_page_number_from_file_name file))
-        (when (not (equal page_num ""))
-          (setq pages (append pages (list (atoi page_num)))))))
-    (foreach page_num (_coco_unique_sorted_numbers pages)
-      (setq page_names (append page_names (list (_coco_page_canonical_name dwg page_num)))))
-    page_names))
-
-(defun _coco_design_page_names (handle dwg)
-  (_coco_design_page_names_from_files handle dwg))
-
 (defun _coco_page_name_for_number (handle dwg page_num)
   (let ((found "")
         (page_names (_coco_design_page_names handle dwg)))
@@ -184,12 +119,6 @@
                  (equal (_coco_page_number_from_name page_name) (safeStr page_num)))
         (setq found page_name)))
     found))
-
-(defun _coco_page_number_from_name (page_name)
-  (let ((value ""))
-    (when (and page_name (rexMatchp ".*:page\\([1-9][0-9]*\\)$" page_name))
-      (setq value (rexSubstitute "\\1")))
-    value))
 
 (defun _coco_page_scope_counts_json (handle page_name)
   (let ((component_tuples nil)
@@ -268,17 +197,17 @@
 (defun _coco_page_counts_json (entry)
   (_coco_nth 1 entry))
 
+(setq _coco_page_counts_acc nil)
+
+(defun _coco_collect_page_counts_item (handle page_name)
+  (setq _coco_page_counts_acc
+    (append _coco_page_counts_acc
+      (list (_coco_page_counts_pair page_name (_coco_page_scope_counts_json handle page_name))))))
+
 (defun _coco_collect_page_counts (handle dwg original_page)
-  (let ((entries nil)
-        (page_names (_coco_design_page_names handle dwg))
-        (counts_json ""))
-    (when page_names
-      (foreach page_name page_names
-        (setq counts_json (_coco_page_scope_counts_json handle page_name))
-        (setq entries (append entries (list (_coco_page_counts_pair page_name counts_json)))))
-      (when (member original_page page_names)
-        (_coco_send_cmd handle (sprintf nil "nmapedit %s;" original_page))))
-    entries))
+  (setq _coco_page_counts_acc nil)
+  (_coco_each_design_page handle dwg original_page '_coco_collect_page_counts_item)
+  _coco_page_counts_acc)
 
 (defun _coco_find_page_counts (entries page_name)
   (let ((found nil))
