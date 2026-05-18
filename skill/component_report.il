@@ -63,8 +63,7 @@
         (_coco_json_string_field "x" (_coco_nth 2 comp_tuple))
         (_coco_json_string_field "y" (_coco_nth 3 comp_tuple))
         (_coco_json_field "page" _coco_component_report_current_page_json)
-        (_coco_json_field "source_properties" (_coco_props_with_names_json props (_coco_source_property_names)))
-        (_coco_json_field "properties" (_coco_props_json props))))))
+        (_coco_json_field "source_properties" (_coco_props_with_names_json props (_coco_source_property_names)))))))
 
 (defun _coco_component_report_components_json_for_page (handle)
   (let ((items nil))

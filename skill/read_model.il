@@ -304,9 +304,7 @@
         (_coco_json_string_field "angle" (_coco_nth 4 comp_tuple))
         (_coco_json_string_field "rotation" (_coco_nth 5 comp_tuple))
         (_coco_json_string_field "lib_name" (_coco_nth 8 comp_tuple))
-        (_coco_json_field "page" _coco_design_current_page_json)
-        (_coco_json_field "pins" (_coco_component_pins_json handle comp_tuple))
-        (_coco_json_field "properties" (_coco_props_json props))))))
+        (_coco_json_field "page" _coco_design_current_page_json)))))
 
 (defun _coco_component_refdes_list (handle)
   (let ((props nil)
