@@ -120,19 +120,33 @@
             (_coco_json_field "pins" (_coco_detail_pins_json handle comp_tuple))
             (_coco_json_field "properties" (_coco_props_json props))))))))
 
-(defun _coco_component_detail_components_json (handle refdes page_json)
-  (let ((items nil)
-        (targets nil)
-        (detail nil))
+(setq _coco_component_detail_items_acc nil)
+(setq _coco_component_detail_active_dwg nil)
+(setq _coco_component_detail_refdes_filter "")
+
+(defun _coco_component_detail_page_item (handle page_name)
+  (let ((targets nil)
+        (detail nil)
+        (page_json (_coco_page_json_from_name _coco_component_detail_active_dwg page_name)))
     (setq _coco_component_tuple_cache (_coco_component_tuples handle))
-    (if (equal (safeStr refdes) "")
+    (if (equal _coco_component_detail_refdes_filter "")
       (setq targets (_coco_component_refdes_list handle))
-      (setq targets (list (safeStr refdes))))
+      (setq targets (list _coco_component_detail_refdes_filter)))
     (foreach target targets
       (setq detail (_coco_component_detail_json_from_refdes handle target page_json))
       (when detail
-        (setq items (append items (list detail)))))
-    (_coco_json_array items)))
+        (setq _coco_component_detail_items_acc (append _coco_component_detail_items_acc (list detail)))))))
+
+(defun _coco_component_detail_components_json (handle refdes)
+  (setq _coco_component_detail_items_acc nil)
+  (setq _coco_component_detail_active_dwg (_coco_active_dwg handle))
+  (setq _coco_component_detail_refdes_filter (safeStr refdes))
+  (_coco_each_design_page
+    handle
+    _coco_component_detail_active_dwg
+    (_coco_resolved_active_page_name handle _coco_component_detail_active_dwg)
+    '_coco_component_detail_page_item)
+  (_coco_json_array _coco_component_detail_items_acc))
 
 (defun _coco_op_component_detail (arg)
   (let ((handle (_coco_import_handle))
@@ -142,4 +156,4 @@
       (list
         (_coco_json_string_field "refdes" (safeStr arg))
         (_coco_json_field "page" page_json)
-        (_coco_json_field "components" (_coco_component_detail_components_json handle arg page_json))))))
+        (_coco_json_field "components" (_coco_component_detail_components_json handle arg))))))

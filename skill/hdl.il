@@ -188,6 +188,26 @@
 (defun _coco_design_page_names (handle dwg)
   (_coco_design_page_names_from_files handle dwg))
 
+(defun _coco_dwg_info_active_page_number (dwg_info)
+  (let ((active_page nil)
+        (head ""))
+    (foreach item dwg_info
+      (when (and (listp item) (not active_page))
+        (setq head (safeStr (car item)))
+        (when (equal head "active")
+          (setq active_page (_coco_nth 1 item)))))
+    (if active_page active_page 1)))
+
+(defun _coco_resolved_active_page_number (handle dwg)
+  (let ((dwg_info (_coco_safe_apply 'cnGetDwgInfo (list handle)))
+        (total (safeStr (_coco_nth 11 dwg))))
+    (if (equal total "1")
+      (_coco_nth 9 dwg)
+      (_coco_dwg_info_active_page_number dwg_info))))
+
+(defun _coco_resolved_active_page_name (handle dwg)
+  (_coco_page_canonical_name dwg (_coco_resolved_active_page_number handle dwg)))
+
 (defun _coco_restore_page_context (handle original_page page_names)
   (when (and original_page (member original_page page_names))
     (_coco_send_cmd handle (sprintf nil "nmapedit %s;" original_page))))

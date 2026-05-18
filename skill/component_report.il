@@ -27,7 +27,7 @@
     "PATH"
     "FILE"))
 
-(defun _coco_component_report_json_from_refdes (handle refdes)
+(defun _coco_component_report_json_from_refdes (handle refdes page_json)
   (let ((props nil)
         (comp_tuple nil)
         (owner_dbid "")
@@ -60,15 +60,35 @@
         (_coco_json_string_field "symbol_name" (_coco_nth 1 comp_tuple))
         (_coco_json_string_field "x" (_coco_nth 2 comp_tuple))
         (_coco_json_string_field "y" (_coco_nth 3 comp_tuple))
+        (_coco_json_field "page" page_json)
         (_coco_json_field "source_properties" (_coco_props_with_names_json props (_coco_source_property_names)))
         (_coco_json_field "properties" (_coco_props_json props))))))
 
-(defun _coco_component_report_components_json (handle)
+(defun _coco_component_report_components_json_for_page (handle page_json)
   (let ((items nil))
     (setq _coco_component_tuple_cache (_coco_component_tuples handle))
     (foreach refdes (_coco_component_refdes_list handle)
-      (setq items (append items (list (_coco_component_report_json_from_refdes handle refdes)))))
-    (_coco_json_array items)))
+      (setq items (append items (list (_coco_component_report_json_from_refdes handle refdes page_json)))))
+    items))
+
+(setq _coco_component_report_items_acc nil)
+(setq _coco_component_report_active_dwg nil)
+
+(defun _coco_component_report_page_item (handle page_name)
+  (let ((page_json (_coco_page_json_from_name _coco_component_report_active_dwg page_name)))
+    (setq _coco_component_report_items_acc
+      (append _coco_component_report_items_acc
+        (_coco_component_report_components_json_for_page handle page_json)))))
+
+(defun _coco_component_report_components_json (handle)
+  (setq _coco_component_report_items_acc nil)
+  (setq _coco_component_report_active_dwg (_coco_active_dwg handle))
+  (_coco_each_design_page
+    handle
+    _coco_component_report_active_dwg
+    (_coco_resolved_active_page_name handle _coco_component_report_active_dwg)
+    '_coco_component_report_page_item)
+  (_coco_json_array _coco_component_report_items_acc))
 
 (defun _coco_op_component_report ()
   (let ((handle (_coco_import_handle)))

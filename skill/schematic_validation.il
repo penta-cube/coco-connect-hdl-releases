@@ -41,24 +41,6 @@
         (setq result (append result (list value)))))
     result))
 
-(defun _coco_validation_component_identity_keys (props owner_dbid)
-  (let ((keys nil)
-        (prop_owner "")
-        (xy_values nil))
-    (foreach prop props
-      (setq prop_owner (_coco_prop_owner_dbid_string prop))
-      (when (and (not (equal prop_owner ""))
-                 (not (_coco_member_string prop_owner keys)))
-        (setq keys (append keys (list prop_owner)))))
-    (when (and (not keys) (not (equal owner_dbid "")))
-      (setq keys (list owner_dbid)))
-    (when (not keys)
-      (setq xy_values (_coco_validation_nonempty_values (_coco_validation_prop_values props (list "XY"))))
-      (foreach xy xy_values
-        (when (not (_coco_member_string xy keys))
-          (setq keys (append keys (list xy))))))
-    keys))
-
 (defun _coco_validation_issue (severity rule_id comp_dbid refdes page prop_name current_value message)
   (list severity rule_id comp_dbid refdes page prop_name current_value message))
 
@@ -98,16 +80,34 @@
       (setq items (append items (list (_coco_validation_issue_to_json issue)))))
     (_coco_json_array items)))
 
-(defun _coco_validation_component_issues (handle refdes page)
+(defun _coco_validation_refdes_count (refdes counts)
+  (let ((count 0))
+    (foreach entry counts
+      (when (equal (car entry) refdes)
+        (setq count (_coco_nth 1 entry))))
+    count))
+
+(defun _coco_validation_refdes_counts_add (refdes counts)
+  (let ((result nil)
+        (matched nil))
+    (foreach entry counts
+      (if (equal (car entry) refdes)
+        (progn
+          (setq matched t)
+          (setq result (append result (list (list refdes (add1 (_coco_nth 1 entry)))))))
+        (setq result (append result (list entry)))))
+    (when (not matched)
+      (setq result (append result (list (list refdes 1)))))
+    result))
+
+(defun _coco_validation_component_record (handle refdes page)
   (let ((props nil)
         (comp_tuple nil)
         (owner_dbid "")
         (xy "")
         (footprint "")
         (value "")
-        (device "")
-        (identity_keys nil)
-        (issues nil))
+        (device ""))
     (setq props (_coco_component_props_for_refdes handle refdes))
     (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
     (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache))
@@ -119,7 +119,16 @@
     (setq footprint (_coco_first_nonempty_prop_value props (list "PCB Footprint" "PCB_FOOTPRINT" "JEDEC_TYPE" "PACK_TYPE")))
     (setq value (_coco_first_nonempty_prop_value props (list "VALUE" "Value")))
     (setq device (_coco_first_nonempty_prop_value props (list "DEVICE" "Device")))
-    (setq identity_keys (_coco_validation_component_identity_keys props owner_dbid))
+    (list owner_dbid refdes page footprint value device)))
+
+(defun _coco_validation_component_issues_from_record (record refdes_counts)
+  (let ((owner_dbid (_coco_nth 0 record))
+        (refdes (_coco_nth 1 record))
+        (page (_coco_nth 2 record))
+        (footprint (_coco_nth 3 record))
+        (value (_coco_nth 4 record))
+        (device (_coco_nth 5 record))
+        (issues nil))
     (cond
       ((equal refdes "")
         (setq issues
@@ -129,7 +138,7 @@
         (setq issues
           (append issues
             (list (_coco_validation_issue "error" "placeholder_refdes" owner_dbid refdes page "RefDes" refdes "Component RefDes is still a placeholder"))))))
-    (when (greaterp (length identity_keys) 1)
+    (when (greaterp (_coco_validation_refdes_count refdes refdes_counts) 1)
       (setq issues
         (append issues
           (list (_coco_validation_issue "error" "duplicate_refdes" owner_dbid refdes page "RefDes" refdes "More than one component appears to use this RefDes")))))
@@ -156,32 +165,56 @@
       (_coco_json_field "warning_count" (safeStr (_coco_validation_count_severity issues "warning")))
       (_coco_json_field "info_count" (safeStr (_coco_validation_count_severity issues "info"))))))
 
-(defun _coco_schematic_validation_json (handle)
+(setq _coco_validation_component_count 0)
+(setq _coco_validation_issues_acc nil)
+(setq _coco_validation_records_acc nil)
+(setq _coco_validation_refdes_counts nil)
+
+(defun _coco_validation_page_item (handle page_name)
   (let ((refdes_list nil)
-        (issues nil)
-        (page_json "")
-        (active_page nil)
-        (page_name ""))
+        (record nil))
     (setq _coco_component_tuple_cache (_coco_component_tuples handle))
     (setq refdes_list (_coco_component_refdes_list handle))
-    (setq page_json (_coco_active_page_json handle))
-    (setq active_page (_coco_safe_apply 'cnFindActiveDwg (list (_coco_safe_apply 'cnGetDwgInfo (list handle)))))
-    (setq page_name (_coco_nth 1 active_page))
+    (setq _coco_validation_component_count (+ _coco_validation_component_count (length refdes_list)))
     (foreach refdes refdes_list
-      (setq issues (append issues (_coco_validation_component_issues handle refdes page_name))))
+      (setq _coco_validation_refdes_counts (_coco_validation_refdes_counts_add refdes _coco_validation_refdes_counts))
+      (setq record (_coco_validation_component_record handle refdes page_name))
+      (setq _coco_validation_records_acc (append _coco_validation_records_acc (list record))))))
+
+(defun _coco_schematic_validation_json (handle)
+  (let ((active_dwg nil)
+        (page_json "")
+        (rules_json ""))
+    (setq active_dwg (_coco_active_dwg handle))
+    (setq page_json (_coco_active_page_json handle))
+    (setq _coco_validation_component_count 0)
+    (setq _coco_validation_issues_acc nil)
+    (setq _coco_validation_records_acc nil)
+    (setq _coco_validation_refdes_counts nil)
+    (_coco_each_design_page
+      handle
+      active_dwg
+      (_coco_resolved_active_page_name handle active_dwg)
+      '_coco_validation_page_item)
+    (foreach record _coco_validation_records_acc
+      (setq _coco_validation_issues_acc
+        (append _coco_validation_issues_acc
+          (_coco_validation_component_issues_from_record record _coco_validation_refdes_counts))))
+    (setq rules_json
+      (_coco_json_array
+        (list
+          (_coco_json_string "missing_refdes")
+          (_coco_json_string "placeholder_refdes")
+          (_coco_json_string "duplicate_refdes")
+          (_coco_json_string "missing_footprint")
+          (_coco_json_string "placeholder_value")
+          (_coco_json_string "placeholder_device")))))
     (_coco_json_object
       (list
         (_coco_json_field "page" page_json)
-        (_coco_json_field "summary" (_coco_validation_summary_json (length refdes_list) issues))
-        (_coco_json_field "rules" (_coco_json_array
-          (list
-            (_coco_json_string "missing_refdes")
-            (_coco_json_string "placeholder_refdes")
-            (_coco_json_string "duplicate_refdes")
-            (_coco_json_string "missing_footprint")
-            (_coco_json_string "placeholder_value")
-            (_coco_json_string "placeholder_device"))))
-        (_coco_json_field "issues" (_coco_validation_issues_json issues))))))
+        (_coco_json_field "summary" (_coco_validation_summary_json _coco_validation_component_count _coco_validation_issues_acc))
+        (_coco_json_field "rules" rules_json)
+        (_coco_json_field "issues" (_coco_validation_issues_json _coco_validation_issues_acc))))))
 
 (defun _coco_op_schematic_validation ()
   (let ((handle (_coco_import_handle)))
