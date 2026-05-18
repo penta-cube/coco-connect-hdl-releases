@@ -175,7 +175,8 @@
         (record nil))
     (setq _coco_component_tuple_cache (_coco_component_tuples handle))
     (setq refdes_list (_coco_component_refdes_list handle))
-    (setq _coco_validation_component_count (+ _coco_validation_component_count (length refdes_list)))
+    (setq _coco_validation_component_count
+      (plus _coco_validation_component_count (length refdes_list)))
     (foreach refdes refdes_list
       (setq _coco_validation_refdes_counts (_coco_validation_refdes_counts_add refdes _coco_validation_refdes_counts))
       (setq record (_coco_validation_component_record handle refdes page_name))
@@ -208,10 +209,10 @@
           (_coco_json_string "duplicate_refdes")
           (_coco_json_string "missing_footprint")
           (_coco_json_string "placeholder_value")
-          (_coco_json_string "placeholder_device")))))
+          (_coco_json_string "placeholder_device"))))
     (_coco_json_object
       (list
-        (_coco_json_field "page" page_json)
+        (_coco_json_field "import_context_page" page_json)
         (_coco_json_field "summary" (_coco_validation_summary_json _coco_validation_component_count _coco_validation_issues_acc))
         (_coco_json_field "rules" rules_json)
         (_coco_json_field "issues" (_coco_validation_issues_json _coco_validation_issues_acc))))))

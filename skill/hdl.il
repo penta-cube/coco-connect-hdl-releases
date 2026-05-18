@@ -134,11 +134,20 @@
     result))
 
 (defun _coco_page_canonical_name (dwg page_num)
-  (sprintf nil "@%s.%s(%s):page%s"
-    (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg)))
-    (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg)))
-    (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg)))
-    (safeStr page_num)))
+  (let ((lib_name (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg))))
+        (cell_name (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg))))
+        (view_name (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg)))))
+    (when (equal lib_name "")
+      (setq lib_name (safeStr (_coco_nth 6 dwg))))
+    (when (equal cell_name "")
+      (setq cell_name (safeStr (_coco_nth 7 dwg))))
+    (when (equal view_name "")
+      (setq view_name (safeStr (_coco_nth 8 dwg))))
+    (sprintf nil "@%s.%s(%s):page%s"
+      lib_name
+      cell_name
+      view_name
+      (safeStr page_num))))
 
 (defun _coco_page_number_from_name (page_name)
   (let ((value ""))
@@ -161,15 +170,24 @@
     result))
 
 (defun _coco_design_page_names_from_files (handle dwg)
-  (let ((lib (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg))))
-        (cell (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg))))
-        (view (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg))))
+  (let ((lib "")
+        (cell "")
+        (view "")
         (vinfo nil)
         (views nil)
         (files nil)
         (pages nil)
         (page_num "")
         (page_names nil))
+    (setq lib (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg))))
+    (when (equal lib "")
+      (setq lib (safeStr (_coco_nth 6 dwg))))
+    (setq cell (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg))))
+    (when (equal cell "")
+      (setq cell (safeStr (_coco_nth 7 dwg))))
+    (setq view (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg))))
+    (when (equal view "")
+      (setq view (safeStr (_coco_nth 8 dwg))))
     (rexCompile "^page[1-9][0-9]*[.]cs[ab]$")
     (setq vinfo (car (errset (cnlGetViewInfo handle (list (list lib cell view))) nil)))
     (when vinfo
