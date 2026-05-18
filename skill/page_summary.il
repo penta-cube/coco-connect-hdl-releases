@@ -125,7 +125,6 @@
         (net_names nil)
         (symbol_names nil)
         (port_count 0))
-    (_coco_send_cmd handle (sprintf nil "nmapedit %s;" page_name))
     (_coco_prepare_page_snapshot handle _coco_page_summary_active_dwg page_name)
     (setq component_tuples _coco_page_snapshot_component_tuples)
     (setq net_names _coco_page_snapshot_net_names)
@@ -286,6 +285,8 @@
     (setq active_page_hint (_coco_dwg_info_active_page dwg_info))
     (setq active_page_num (_coco_dwg_resolved_active_page active_dwg active_page_hint))
     (setq active_page_name (_coco_page_name_for_number handle active_dwg active_page_num))
+    (when (equal active_page_name "")
+      (setq active_page_name (_coco_dwg_full_name active_dwg)))
     (setq page_counts (_coco_collect_page_counts handle active_dwg active_page_name))
     (_coco_json_object
       (list

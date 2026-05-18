@@ -234,6 +234,7 @@
   (let ((page_names (_coco_design_page_names handle dwg)))
     (when page_names
       (foreach page_name page_names
+        (_coco_send_cmd handle (sprintf nil "nmapedit %s;" page_name))
         (apply page_handler (list handle page_name)))
       (_coco_restore_page_context handle original_page page_names))
     page_names))

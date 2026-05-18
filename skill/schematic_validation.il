@@ -177,7 +177,7 @@
     (_coco_prepare_page_snapshot handle _coco_validation_active_dwg page_name)
     (setq refdes_list _coco_page_snapshot_refdes_list)
     (setq _coco_validation_component_count
-      (plus _coco_validation_component_count (length refdes_list)))
+      (plus _coco_validation_component_count (length _coco_page_snapshot_component_tuples)))
     (foreach refdes refdes_list
       (setq _coco_validation_refdes_counts (_coco_validation_refdes_counts_add refdes _coco_validation_refdes_counts))
       (setq record (_coco_validation_component_record handle refdes page_name))
