@@ -125,3 +125,116 @@
     (setq iter (_coco_open_iterator handle find_cmd 'cnGetProps))
     (setq values (_coco_collect_prop_values (_coco_iterator_items iter) allowed_names))
     (list (_coco_iterator_group iter) (length values))))
+
+(defun _coco_unique_sorted_numbers (items)
+  (let ((result nil))
+    (foreach item items
+      (when (and item (not (member item result)))
+        (setq result (append result (list item)))))
+    result))
+
+(defun _coco_page_canonical_name (dwg page_num)
+  (let ((lib_name (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg))))
+        (cell_name (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg))))
+        (view_name (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg)))))
+    (when (equal lib_name "")
+      (setq lib_name (safeStr (_coco_nth 6 dwg))))
+    (when (equal cell_name "")
+      (setq cell_name (safeStr (_coco_nth 7 dwg))))
+    (when (equal view_name "")
+      (setq view_name (safeStr (_coco_nth 8 dwg))))
+    (sprintf nil "@%s.%s(%s):page%s"
+      lib_name
+      cell_name
+      view_name
+      (safeStr page_num))))
+
+(defun _coco_page_number_from_name (page_name)
+  (let ((value ""))
+    (when (and page_name (rexMatchp ".*:page\\([1-9][0-9]*\\)$" page_name))
+      (setq value (rexSubstitute "\\1")))
+    value))
+
+(defun _coco_page_number_from_file_name (file_name)
+  (let ((value ""))
+    (when (and file_name
+               (rexMatchp "^page\\([1-9][0-9]*\\)[.]cs[ab]$" (lowerCase file_name)))
+      (setq value (rexSubstitute "\\1")))
+    value))
+
+(defun _coco_view_file_names (views)
+  (let ((result nil)
+        (view_info nil))
+    (setq view_info (if (and (listp views) (listp (car views))) (car views) views))
+    (setq result (car (errset (cnlGetViewFileNames view_info) nil)))
+    result))
+
+(defun _coco_design_page_names_from_files (handle dwg)
+  (let ((lib "")
+        (cell "")
+        (view "")
+        (vinfo nil)
+        (views nil)
+        (files nil)
+        (pages nil)
+        (page_num "")
+        (page_names nil))
+    (setq lib (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg))))
+    (when (equal lib "")
+      (setq lib (safeStr (_coco_nth 6 dwg))))
+    (setq cell (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg))))
+    (when (equal cell "")
+      (setq cell (safeStr (_coco_nth 7 dwg))))
+    (setq view (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg))))
+    (when (equal view "")
+      (setq view (safeStr (_coco_nth 8 dwg))))
+    (rexCompile "^page[1-9][0-9]*[.]cs[ab]$")
+    (setq vinfo (car (errset (cnlGetViewInfo handle (list (list lib cell view))) nil)))
+    (when vinfo
+      (setq views (car (errset (cnlGetViews vinfo) nil))))
+    (when views
+      (setq files (_coco_view_file_names views)))
+    (foreach file files
+      (when (stringp file)
+        (setq page_num (_coco_page_number_from_file_name file))
+        (when (not (equal page_num ""))
+          (setq pages (append pages (list (atoi page_num)))))))
+    (foreach page_num (_coco_unique_sorted_numbers pages)
+      (setq page_names (append page_names (list (_coco_page_canonical_name dwg page_num)))))
+    page_names))
+
+(defun _coco_design_page_names (handle dwg)
+  (_coco_design_page_names_from_files handle dwg))
+
+(defun _coco_dwg_info_active_page_number (dwg_info)
+  (let ((active_page nil)
+        (head ""))
+    (foreach item dwg_info
+      (when (and (listp item) (not active_page))
+        (setq head (safeStr (car item)))
+        (when (equal head "active")
+          (setq active_page (_coco_nth 1 item)))))
+    (if active_page active_page 1)))
+
+(defun _coco_resolved_active_page_number (handle dwg)
+  (let ((dwg_info (_coco_safe_apply 'cnGetDwgInfo (list handle)))
+        (total (safeStr (_coco_nth 11 dwg))))
+    (if (equal total "1")
+      (_coco_nth 9 dwg)
+      (_coco_dwg_info_active_page_number dwg_info))))
+
+(defun _coco_resolved_active_page_name (handle dwg)
+  (_coco_page_canonical_name dwg (_coco_resolved_active_page_number handle dwg)))
+
+(defun _coco_restore_page_context (handle original_page page_names)
+  (when (and original_page (member original_page page_names))
+    (_coco_send_cmd handle (sprintf nil "nmapedit %s;" original_page))))
+
+(defun _coco_each_design_page (handle dwg original_page page_handler)
+  (let ((page_names (_coco_design_page_names handle dwg)))
+    (when page_names
+      (foreach page_name page_names
+        (_coco_send_cmd handle (sprintf nil "nmapedit %s;" page_name))
+        (apply page_handler (list handle page_name)))
+      (_coco_restore_page_context handle original_page page_names))
+    page_names))
