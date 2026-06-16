@@ -100,7 +100,7 @@
             (setq y (safeStr (_coco_nth 1 parsed)))))
         (setq dbid (_coco_detail_component_dbid comp_tuple props))
         (setq path (_coco_first_nonempty_prop_value props (list "PATH" "Path")))
-        (setq _coco_ui_part_detail_result (list page_name dbid path x y)))))))
+        (setq _coco_ui_part_detail_result (list page_name dbid path x y))))))
 
 (defun _coco_ui_find_part_detail (handle refdes)
   (setq _coco_ui_part_detail_active_dwg (_coco_active_dwg handle))
