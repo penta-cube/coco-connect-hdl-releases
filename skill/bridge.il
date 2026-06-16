@@ -37,6 +37,7 @@
 (load (_coco_module_file "component_detail.il"))
 (load (_coco_module_file "page_summary.il"))
 (load (_coco_module_file "ui_navigation.il"))
+(load (_coco_module_file "batch_edit.il"))
 
 ;;; File paths
 
@@ -122,6 +123,9 @@
                 ((equal op "page_summary") (_coco_op_page_summary))
                 ((equal op "ui_navigate_part") (_coco_op_ui_navigate_part arg))
                 ((equal op "ui_navigate_net") (_coco_op_ui_navigate_net arg))
+                ((equal op "batch_edit_snapshot") (_coco_op_batch_edit_snapshot arg))
+                ((equal op "property_batch_edit") (_coco_op_property_batch_edit arg))
+                ((equal op "refdes_rename") (_coco_op_refdes_rename arg))
                 (t (error "UNKNOWN_OP" (_coco_to_string op))))
               t)))
       (if result

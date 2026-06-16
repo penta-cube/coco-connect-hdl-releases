@@ -41,7 +41,7 @@
         (setq result (errset (cnGetGroupName find_result) nil))
         (if result
           (setq group (safeStr (car result)))
-          (_coco_log_error "_coco_open_iterator" "cnGetGroupName failed"))
+          (setq group ""))
         (when (not (equal group ""))
           (setq result (errset (cnGetGroupedObjectSet find_result) nil))
           (if result
