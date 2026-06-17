@@ -14,6 +14,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/component_report.il`
   - `skill/schematic_validation.il`
   - `skill/component_detail.il`
+  - `skill/connectivity.il`
 
 ## Bridge Commands
 
@@ -23,6 +24,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `component_report`
 - `schematic_validation`
 - `component_detail`
+- `pin_connectivity`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -77,6 +79,7 @@ coco-connect-hdl read-model
 coco-connect-hdl component-report
 coco-connect-hdl schematic-validation
 coco-connect-hdl component-detail U1
+coco-connect-hdl pin-connectivity U1
 ```
 
 Session-scoped IPC examples:
@@ -88,6 +91,7 @@ coco-connect-hdl --instance-id HDL_1 read-model
 coco-connect-hdl --instance-id HDL_1 component-report
 coco-connect-hdl --instance-id HDL_1 schematic-validation
 coco-connect-hdl --instance-id HDL_1 component-detail U1
+coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
 ```
 
 ## Request Format
