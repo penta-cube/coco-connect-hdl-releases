@@ -15,6 +15,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/schematic_validation.il`
   - `skill/component_detail.il`
   - `skill/connectivity.il`
+  - `skill/circuit_block.il`
 
 ## Bridge Commands
 
@@ -25,6 +26,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `schematic_validation`
 - `component_detail`
 - `pin_connectivity`
+- `circuit_block`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -80,6 +82,7 @@ coco-connect-hdl component-report
 coco-connect-hdl schematic-validation
 coco-connect-hdl component-detail U1
 coco-connect-hdl pin-connectivity U1
+coco-connect-hdl circuit-block U100
 ```
 
 Session-scoped IPC examples:
@@ -92,6 +95,7 @@ coco-connect-hdl --instance-id HDL_1 component-report
 coco-connect-hdl --instance-id HDL_1 schematic-validation
 coco-connect-hdl --instance-id HDL_1 component-detail U1
 coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
+coco-connect-hdl --instance-id HDL_1 circuit-block U100
 ```
 
 ## Request Format
@@ -105,8 +109,8 @@ op
 arg
 ```
 
-`arg` is empty for most public HDL commands. For `component_detail`, `arg` may
-contain a RefDes such as `U1`; empty means all active-page components.
+`arg` is empty for most public HDL commands. For `component_detail`,
+`pin_connectivity`, and `circuit_block`, `arg` contains a RefDes such as `U1`.
 
 ## Response Format
 
