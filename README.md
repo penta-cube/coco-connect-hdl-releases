@@ -13,6 +13,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/read_model.il`
   - `skill/component_detail.il`
   - `skill/overview.il`
+  - `skill/property_crud.il`
   - `skill/connectivity.il`
   - `skill/circuit_block.il`
   - `skill/net_detail.il`
@@ -27,6 +28,10 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `page_overview`
 - `pin_connectivity`
 - `circuit_block`
+- `property_get`
+- `property_set`
+- `property_del`
+- `rename`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -87,6 +92,10 @@ coco-connect-hdl ui-navigate-part U1 --page 3
 coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
 coco-connect-hdl pin-connectivity U1
 coco-connect-hdl circuit-block U100
+coco-connect-hdl property-get U1 VALUE --page 3
+coco-connect-hdl property-set U1 VALUE 10k --page 3
+coco-connect-hdl property-del U1 TOLERANCE --page 3
+coco-connect-hdl rename R20_0 R20_1 --page 3
 ```
 
 Session-scoped IPC examples:
@@ -103,9 +112,17 @@ coco-connect-hdl --instance-id HDL_1 ui-navigate-part U1 --page 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
 coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
 coco-connect-hdl --instance-id HDL_1 circuit-block U100
+coco-connect-hdl --instance-id HDL_1 property-get U1 VALUE --page 3
+coco-connect-hdl --instance-id HDL_1 property-set U1 VALUE 10k --page 3
+coco-connect-hdl --instance-id HDL_1 property-del U1 TOLERANCE --page 3
+coco-connect-hdl --instance-id HDL_1 rename R20_0 R20_1 --page 3
 ```
 
 ## Request Format
+
+`property_set`, `property_del`, and `rename` mutate the active design
+immediately. They do not provide dry-run, audit, conflict preflight, or
+rollback.
 
 The request file contains four newline-separated fields:
 
@@ -124,6 +141,8 @@ For `ui_navigate_part` and `ui_navigate_net`, `arg` contains `TARGET` or
 `TARGET|PAGE` when a page hint is provided.
 For `page_overview`, `arg` is empty for the active page or contains a page
 number/canonical page name.
+Property CRUD and rename arguments use `|`-separated fields; empty optional
+fields use the reserved `__COCO_EMPTY__` sentinel.
 
 ## Response Format
 
