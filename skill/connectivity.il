@@ -143,9 +143,15 @@
     (_coco_prop_owner_type_string prop)))
 
 (defun _coco_conn_signal_props_for_page (handle)
-  (let ((props (_coco_props_from_find handle "find sig_name=*"))
+  (let ((props nil)
         (entries nil)
         (value ""))
+    (setq props
+      (_coco_merge_unique_props props (_coco_props_from_find handle "find sig_name=*")))
+    (setq props
+      (_coco_merge_unique_props props (_coco_props_from_find handle "find hdl_power=*")))
+    (setq props
+      (_coco_merge_unique_props props (_coco_props_from_find handle "find hdl_tap=*")))
     (foreach prop props
       (setq value (safeGetProp prop "value"))
       (when (not (equal value ""))

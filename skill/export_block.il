@@ -237,16 +237,6 @@
           (list (_coco_cb_component_json handle refdes comp_tuples pins blocked_components)))))
     (_coco_json_array items)))
 
-(defun _coco_cb_net_names_for_wire (handle wire)
-  (let ((names (_coco_conn_net_names_for_wire handle wire))
-        (bbox_names nil))
-    (setq names (_coco_cb_normalize_net_names names))
-    (when (not names)
-      (setq bbox_names (_coco_cb_net_names_by_wire_bbox handle wire))
-      (foreach name bbox_names
-        (setq names (_coco_cb_add_net_name name names))))
-    names))
-
 (defun _coco_cb_normalize_net_name (name)
   (let ((value (safeStr name))
         (len 0))
@@ -256,132 +246,39 @@
       (substring value 1 (difference len 2))
       value)))
 
-(defun _coco_cb_add_net_name (name names)
-  (let ((value (_coco_cb_normalize_net_name name)))
-    (if (or (equal value "") (_coco_member_string value names))
-      names
-      (append names (list value)))))
+(defun _coco_cb_wire_json (wire)
+  (_coco_json_object
+    (list
+      (_coco_json_string_field "dbid" (_coco_conn_wire_dbid wire))
+      (_coco_json_string_field "x1" (_coco_conn_wire_x1 wire))
+      (_coco_json_string_field "y1" (_coco_conn_wire_y1 wire))
+      (_coco_json_string_field "x2" (_coco_conn_wire_x2 wire))
+      (_coco_json_string_field "y2" (_coco_conn_wire_y2 wire)))))
 
-(defun _coco_cb_normalize_net_names (names)
-  (let ((items nil))
-    (foreach name names
-      (setq items (_coco_cb_add_net_name name items)))
-    items))
-
-(defun _coco_cb_min_int (a b)
-  (if (leqp a b) a b))
-
-(defun _coco_cb_max_int (a b)
-  (if (leqp a b) b a))
-
-(defun _coco_cb_net_name_candidates_from_props (props)
-  (let ((names nil)
-        (prop_name "")
-        (value ""))
-    (foreach prop props
-      (setq prop_name (upperCase (safeGetProp prop "name")))
-      (when (_coco_member_string prop_name (list "SIG_NAME" "HDL_POWER" "HDL_TAP"))
-        (setq value (safeGetProp prop "value"))
-        (setq names (_coco_cb_add_net_name value names))))
-    names))
-
-(defun _coco_cb_single_name_or_nil (names)
-  (if (equal (length names) 1) names nil))
-
-(defun _coco_cb_net_names_from_props_for_wire (props wire)
-  (let ((names nil)
-        (loose_names nil)
-        (prop_name "")
-        (value "")
-        (x "")
-        (y ""))
-    (foreach prop props
-      (setq prop_name (upperCase (safeGetProp prop "name")))
-      (when (_coco_member_string prop_name (list "SIG_NAME" "HDL_POWER" "HDL_TAP"))
-        (setq value (safeGetProp prop "value"))
-        (setq x (_coco_conn_prop_attach_x prop))
-        (setq y (_coco_conn_prop_attach_y prop))
-        (cond
-          ((and (not (equal value ""))
-                (not (equal x ""))
-                (not (equal y ""))
-                (_coco_conn_point_on_wire x y wire))
-            (setq names (_coco_cb_add_net_name value names)))
-          ((and (not (equal value ""))
-                (or (equal x "") (equal y "")))
-            (setq loose_names (_coco_cb_add_net_name value loose_names))))))
-    (if names names (_coco_cb_single_name_or_nil loose_names))))
-
-(defun _coco_cb_props_from_wire_bbox_include (handle wire include_cmd)
-  (let ((x1 (atoi (_coco_conn_wire_x1 wire)))
-        (y1 (atoi (_coco_conn_wire_y1 wire)))
-        (x2 (atoi (_coco_conn_wire_x2 wire)))
-        (y2 (atoi (_coco_conn_wire_y2 wire)))
-        (pad 25)
-        (select_result nil)
-        (include_result nil)
-        (group "")
-        (include_group "")
-        (group_obj nil)
-        (props nil)
-        (result nil))
-    (setq result
-      (errset
-        (_coco_send_cmd
-          handle
-          (sprintf nil "Select (%d %d) (%d %d)"
-            (difference (_coco_cb_min_int x1 x2) pad)
-            (difference (_coco_cb_min_int y1 y2) pad)
-            (plus (_coco_cb_max_int x1 x2) pad)
-            (plus (_coco_cb_max_int y1 y2) pad)))
-        nil))
-    (when result
-      (setq select_result (car result))
-      (setq group (safeStr (_coco_safe_apply 'cnGetGroupName (list select_result))))
-      (setq include_result (errset (_coco_send_cmd handle include_cmd) nil))
-      (when include_result
-        (setq include_group (safeStr (_coco_safe_apply 'cnGetGroupName (list (car include_result)))))
-        (setq group_obj (_coco_safe_apply 'cnGetGroupedObjectSet (list (car include_result))))
-        (when group_obj
-          (setq props (_coco_safe_apply 'cnGetProps (list group_obj)))))
-      (when (and (not (equal include_group "")) (not (equal include_group group)))
-        (_coco_cleanup_iterator handle (_coco_make_iterator include_group nil)))
-      (_coco_cleanup_iterator handle (_coco_make_iterator group nil)))
-    props))
-
-(defun _coco_cb_net_names_by_wire_bbox (handle wire)
-  (let ((names nil)
-        (loose_names nil)
-        (props nil)
-        (prop_names nil)
-        (candidate_names nil))
-    (foreach include_cmd (list "include nets properties" "include bodies properties" "include properties")
-      (setq props (_coco_cb_props_from_wire_bbox_include handle wire include_cmd))
-      (setq prop_names (_coco_cb_net_names_from_props_for_wire props wire))
-      (foreach name prop_names
-        (when (not (_coco_member_string name names))
-          (setq names (append names (list name)))))
-      (when (not prop_names)
-        (setq candidate_names (_coco_cb_net_name_candidates_from_props props))
-        (foreach name candidate_names
-          (setq loose_names (_coco_cb_add_net_name name loose_names)))))
-    (if names names (_coco_cb_single_name_or_nil loose_names))))
-
-(defun _coco_cb_wire_json (handle wire)
-  (let ((net_names (_coco_cb_net_names_for_wire handle wire)))
-    (_coco_json_object
-      (list
-        (_coco_json_string_field "dbid" (_coco_conn_wire_dbid wire))
-        (_coco_json_string_field "x1" (_coco_conn_wire_x1 wire))
-        (_coco_json_string_field "y1" (_coco_conn_wire_y1 wire))
-        (_coco_json_string_field "x2" (_coco_conn_wire_x2 wire))
-        (_coco_json_string_field "y2" (_coco_conn_wire_y2 wire))
-        (_coco_json_field "net_names" (_coco_json_array (mapcar '_coco_json_string net_names)))))))
-
-(defun _coco_cb_wires_json (handle wires)
+(defun _coco_cb_wires_json (wires)
   (let ((items nil))
     (foreach wire wires
-      (setq items (append items (list (_coco_cb_wire_json handle wire)))))
+      (setq items (append items (list (_coco_cb_wire_json wire)))))
+    (_coco_json_array items)))
+
+(defun _coco_cb_net_labels_json (entries)
+  (let ((items nil)
+        (name "")
+        (x "")
+        (y ""))
+    (foreach entry entries
+      (setq name (_coco_cb_normalize_net_name (_coco_nth 0 entry)))
+      (setq x (safeStr (_coco_nth 1 entry)))
+      (setq y (safeStr (_coco_nth 2 entry)))
+      (when (and (not (equal name "")) (not (equal x "")) (not (equal y "")))
+        (setq items
+          (append items
+            (list
+              (_coco_json_object
+                (list
+                  (_coco_json_string_field "name" name)
+                  (_coco_json_string_field "x" x)
+                  (_coco_json_string_field "y" y))))))))
     (_coco_json_array items)))
 
 (setq _coco_cb_result_json nil)
@@ -407,9 +304,9 @@
         (setq all_pins (_coco_conn_all_page_pins handle))
         (setq target_pins (_coco_cb_pins_for_refdes all_pins _coco_cb_target_refdes))
         (when target_pins
-          (setq _coco_conn_page_net_names
-            (_coco_collect_values_from_find handle "find sig_name=*" (list "SIG_NAME")))
           (setq _coco_conn_page_signal_props (_coco_conn_signal_props_for_page handle))
+          (setq _coco_conn_page_net_names
+            (_coco_conn_signal_prop_names _coco_conn_page_signal_props))
           (setq all_wires (_coco_wire_tuples handle))
           (setq page_json (_coco_page_json_from_name _coco_cb_active_dwg page_name))
           (setq expanded (_coco_cb_expand _coco_cb_target_refdes all_pins all_wires))
@@ -423,7 +320,8 @@
                 (_coco_json_string_field "refdes" _coco_cb_target_refdes)
                 (_coco_json_field "page" page_json)
                 (_coco_json_field "components" (_coco_cb_components_json handle components comp_tuples all_pins blocked_components))
-                (_coco_json_field "wires" (_coco_cb_wires_json handle wires))))))))))
+                (_coco_json_field "wires" (_coco_cb_wires_json wires))
+                (_coco_json_field "net_labels" (_coco_cb_net_labels_json _coco_conn_page_signal_props))))))))))
 
 (defun _coco_cb_extract_json (handle refdes)
   (setq _coco_cb_result_json nil)
