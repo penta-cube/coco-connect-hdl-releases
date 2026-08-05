@@ -15,7 +15,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/overview.il`
   - `skill/property_crud.il`
   - `skill/connectivity.il`
-  - `skill/circuit_block.il`
+  - `skill/export_block.il`
   - `skill/net_detail.il`
 
 ## Bridge Commands
@@ -26,7 +26,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `net_detail`
 - `design_overview`
 - `page_overview`
-- `circuit_block`
+- `export_block`
 - `property_get`
 - `property_set`
 - `property_del`
@@ -89,7 +89,7 @@ coco-connect-hdl page-overview
 coco-connect-hdl page-overview 3
 coco-connect-hdl ui-navigate-part U1 --page 3
 coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
-coco-connect-hdl circuit-block U100
+coco-connect-hdl export-block U100 --output block.json
 coco-connect-hdl property-get U1 VALUE --page 3
 coco-connect-hdl property-set U1 VALUE 10k --page 3
 coco-connect-hdl property-del U1 TOLERANCE --page 3
@@ -112,7 +112,7 @@ coco-connect-hdl --instance-id HDL_1 design-overview
 coco-connect-hdl --instance-id HDL_1 page-overview 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-part U1 --page 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
-coco-connect-hdl --instance-id HDL_1 circuit-block U100
+coco-connect-hdl --instance-id HDL_1 export-block U100
 coco-connect-hdl --instance-id HDL_1 property-get U1 VALUE --page 3
 coco-connect-hdl --instance-id HDL_1 property-set U1 VALUE 10k --page 3
 coco-connect-hdl --instance-id HDL_1 property-del U1 TOLERANCE --page 3
@@ -136,8 +136,8 @@ arg
 
 `arg` is empty for most public HDL commands. For `component_detail`, `arg`
 contains `REFDES|PAGE`, where PAGE may be empty. For `net_detail`, `arg`
-contains the logical net name. For `circuit_block`, `arg` contains a RefDes
-such as `U1`.
+contains the logical net name. For `export_block`, `arg` contains a RefDes such
+as `U1`; the Rust command converts its minimal raw payload to Schematic Document v1.
 For `ui_navigate_part` and `ui_navigate_net`, `arg` contains `TARGET` or
 `TARGET|PAGE` when a page hint is provided.
 For `page_overview`, `arg` is empty for the active page or contains a page

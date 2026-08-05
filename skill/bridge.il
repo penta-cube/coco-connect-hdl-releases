@@ -37,7 +37,7 @@
 (load (_coco_module_file "ui_navigation.il"))
 (load (_coco_module_file "property_crud.il"))
 (load (_coco_module_file "connectivity.il"))
-(load (_coco_module_file "circuit_block.il"))
+(load (_coco_module_file "export_block.il"))
 (load (_coco_module_file "net_detail.il"))
 
 ;;; File paths
@@ -122,7 +122,7 @@
                 ((equal op "page_overview") (_coco_op_page_overview arg))
                 ((equal op "ui_navigate_part") (_coco_op_ui_navigate_part arg))
                 ((equal op "ui_navigate_net") (_coco_op_ui_navigate_net arg))
-                ((equal op "circuit_block") (_coco_op_circuit_block arg))
+                ((equal op "export_block") (_coco_op_export_block arg))
                 ((equal op "net_detail") (_coco_op_net_detail arg))
                 ((equal op "property_get") (_coco_op_property_get arg))
                 ((equal op "property_set") (_coco_op_property_set arg))
