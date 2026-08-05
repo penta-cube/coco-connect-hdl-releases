@@ -75,6 +75,7 @@ coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
 coco-connect-hdl component-detail U1
+coco-connect-hdl component-detail U1 --page 3
 coco-connect-hdl design-overview
 coco-connect-hdl page-overview
 coco-connect-hdl page-overview 3
@@ -88,6 +89,7 @@ Session-scoped IPC examples:
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 component-detail U1
+coco-connect-hdl --instance-id HDL_1 component-detail U1 --page 3
 coco-connect-hdl --instance-id HDL_1 design-overview
 coco-connect-hdl --instance-id HDL_1 page-overview 3
 coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
@@ -105,8 +107,9 @@ op
 arg
 ```
 
-`arg` is empty for most public HDL commands. For `component_detail`,
-`pin_connectivity`, and `circuit_block`, `arg` contains a RefDes such as `U1`.
+`arg` is empty for most public HDL commands. For `component_detail`, `arg`
+contains `REFDES|PAGE`, where PAGE may be empty. For `pin_connectivity` and
+`circuit_block`, `arg` contains a RefDes such as `U1`.
 For `page_overview`, `arg` is empty for the active page or contains a page
 number/canonical page name.
 
