@@ -26,7 +26,6 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `net_detail`
 - `design_overview`
 - `page_overview`
-- `pin_connectivity`
 - `circuit_block`
 - `property_get`
 - `property_set`
@@ -90,13 +89,16 @@ coco-connect-hdl page-overview
 coco-connect-hdl page-overview 3
 coco-connect-hdl ui-navigate-part U1 --page 3
 coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
-coco-connect-hdl pin-connectivity U1
 coco-connect-hdl circuit-block U100
 coco-connect-hdl property-get U1 VALUE --page 3
 coco-connect-hdl property-set U1 VALUE 10k --page 3
 coco-connect-hdl property-del U1 TOLERANCE --page 3
 coco-connect-hdl rename R20_0 R20_1 --page 3
 ```
+
+`component-detail` returns each pin's connected state, first wire DB id, and
+resolved net name. Pass that net name to `net-detail` for net-wide pins and
+wire coordinates.
 
 Session-scoped IPC examples:
 
@@ -110,7 +112,6 @@ coco-connect-hdl --instance-id HDL_1 design-overview
 coco-connect-hdl --instance-id HDL_1 page-overview 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-part U1 --page 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
-coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
 coco-connect-hdl --instance-id HDL_1 circuit-block U100
 coco-connect-hdl --instance-id HDL_1 property-get U1 VALUE --page 3
 coco-connect-hdl --instance-id HDL_1 property-set U1 VALUE 10k --page 3
@@ -135,8 +136,8 @@ arg
 
 `arg` is empty for most public HDL commands. For `component_detail`, `arg`
 contains `REFDES|PAGE`, where PAGE may be empty. For `net_detail`, `arg`
-contains the logical net name. For `pin_connectivity` and
-`circuit_block`, `arg` contains a RefDes such as `U1`.
+contains the logical net name. For `circuit_block`, `arg` contains a RefDes
+such as `U1`.
 For `ui_navigate_part` and `ui_navigate_net`, `arg` contains `TARGET` or
 `TARGET|PAGE` when a page hint is provided.
 For `page_overview`, `arg` is empty for the active page or contains a page

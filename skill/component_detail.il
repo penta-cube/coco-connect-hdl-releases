@@ -62,26 +62,78 @@
 (defun _coco_detail_pin_y (pin)
   (safeStr (_coco_nth 3 pin)))
 
-(defun _coco_detail_pin_json (pin)
-  (_coco_json_object
-    (list
-      (_coco_json_string_field "name" (_coco_detail_pin_name pin))
-      (_coco_json_string_field "x" (_coco_detail_pin_x pin))
-      (_coco_json_string_field "y" (_coco_detail_pin_y pin))
-      (_coco_json_field "properties" (_coco_json_array nil))
-      (_coco_json_string_field "connected_wire_dbid" "")
-      (_coco_json_string_field "net_name" ""))))
+(setq _coco_detail_net_cache nil)
 
-(defun _coco_detail_pins_json (handle comp_tuple)
+(defun _coco_detail_wire_cache_key (wire)
+  (let ((dbid (_coco_conn_wire_dbid wire)))
+    (if (not (equal dbid ""))
+      dbid
+      (strcat (_coco_conn_wire_p1 wire) "|" (_coco_conn_wire_p2 wire)))))
+
+(defun _coco_detail_cached_net_name (wire)
+  (let ((key (_coco_detail_wire_cache_key wire))
+        (found ""))
+    (foreach entry _coco_detail_net_cache
+      (when (and
+              (equal found "")
+              (_coco_member_string key (_coco_nth 0 entry)))
+        (setq found (safeStr (_coco_nth 1 entry)))))
+    found))
+
+(defun _coco_detail_cache_net_name (wires net_name)
+  (let ((keys nil))
+    (when (not (equal net_name ""))
+      (foreach wire wires
+        (setq keys (append keys (list (_coco_detail_wire_cache_key wire)))))
+      (setq _coco_detail_net_cache
+        (append _coco_detail_net_cache (list (list keys net_name)))))))
+
+(defun _coco_detail_pin_json (handle refdes pin comp_tuple props wires)
+  (let ((pin_name (_coco_detail_pin_name pin))
+        (x (_coco_detail_pin_x pin))
+        (y (_coco_detail_pin_y pin))
+        (direct_wires nil)
+        (trace_wires nil)
+        (net_names nil)
+        (pin_entry nil)
+        (cached_name "")
+        (wire_dbid ""))
+    (setq direct_wires (_coco_conn_wires_at_xy wires x y))
+    (when direct_wires
+      (setq wire_dbid (_coco_conn_wire_dbid (car direct_wires)))
+      (setq cached_name (_coco_detail_cached_net_name (car direct_wires))))
+    (if (not (equal cached_name ""))
+      (setq net_names (list cached_name))
+      (progn
+        (setq trace_wires (_coco_conn_trace_wires_from_xy wires x y))
+        (setq net_names (_coco_conn_net_names_from_wires handle trace_wires))
+        (when net_names
+          (_coco_detail_cache_net_name trace_wires (_coco_conn_first_string net_names)))))
+    (when (not net_names)
+      (setq pin_entry (_coco_conn_pin_entry refdes pin comp_tuple props))
+      (setq net_names (_coco_conn_generated_net_names_for_pin_entry pin_entry)))
+    (_coco_json_object
+      (list
+        (_coco_json_string_field "name" pin_name)
+        (_coco_json_string_field "x" x)
+        (_coco_json_string_field "y" y)
+        (_coco_json_field "connected" (if direct_wires "true" "false"))
+        (_coco_json_string_field "connected_wire_dbid" wire_dbid)
+        (_coco_json_string_field "net_name" (_coco_conn_first_string net_names))))))
+
+(defun _coco_detail_pins_json (handle refdes comp_tuple props wires)
   (let ((sym_info nil)
         (pins nil)
         (items nil))
+    (setq _coco_detail_net_cache nil)
     (when comp_tuple
       (setq sym_info (_coco_safe_apply 'cnGetCompSymInfo (list handle comp_tuple)))
       (when sym_info
         (setq pins (_coco_safe_apply 'cnCreateCompPins (list comp_tuple sym_info)))))
     (foreach pin pins
-      (setq items (append items (list (_coco_detail_pin_json pin)))))
+      (setq items
+        (append items
+          (list (_coco_detail_pin_json handle refdes pin comp_tuple props wires)))))
     (_coco_json_array items)))
 
 (setq _coco_component_detail_current_page_json "")
@@ -93,7 +145,8 @@
         (part_name "")
         (device "")
         (footprint "")
-        (value ""))
+        (value "")
+        (wires nil))
     (setq props (_coco_component_props_for_refdes handle refdes))
     (if (not props)
       nil
@@ -101,6 +154,11 @@
         (setq _coco_component_tuple_cache (_coco_component_tuples handle))
         (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
         (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache))
+        (when comp_tuple
+          (setq _coco_conn_page_signal_props (_coco_conn_signal_props_for_page handle))
+          (setq _coco_conn_page_net_names
+            (_coco_conn_signal_prop_names _coco_conn_page_signal_props))
+          (setq wires (_coco_wire_tuples handle)))
         (setq part_name (_coco_first_nonempty_prop_value props (list "PART_NAME" "Part Name" "PART_NUMBER")))
         (setq device (_coco_first_nonempty_prop_value props (list "DEVICE" "Device")))
         (setq footprint (_coco_first_nonempty_prop_value props (list "PCB Footprint" "PCB_FOOTPRINT" "JEDEC_TYPE" "PACK_TYPE")))
@@ -120,7 +178,9 @@
             (_coco_json_string_field "angle" (_coco_detail_component_angle comp_tuple))
             (_coco_json_string_field "mirror" (_coco_detail_component_mirror comp_tuple))
             (_coco_json_field "page" _coco_component_detail_current_page_json)
-            (_coco_json_field "pins" (_coco_detail_pins_json handle comp_tuple))
+            (_coco_json_field
+              "pins"
+              (_coco_detail_pins_json handle refdes comp_tuple props wires))
             (_coco_json_field "properties" (_coco_props_json props))))))))
 
 (setq _coco_component_detail_items_acc nil)
