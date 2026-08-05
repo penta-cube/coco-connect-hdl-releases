@@ -24,6 +24,8 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `component_report`
 - `schematic_validation`
 - `component_detail`
+- `design_overview`
+- `page_overview`
 - `pin_connectivity`
 - `circuit_block`
 - `quit`
@@ -79,6 +81,9 @@ coco-connect-hdl session-status
 coco-connect-hdl component-report
 coco-connect-hdl schematic-validation
 coco-connect-hdl component-detail U1
+coco-connect-hdl design-overview
+coco-connect-hdl page-overview
+coco-connect-hdl page-overview 3
 coco-connect-hdl pin-connectivity U1
 coco-connect-hdl circuit-block U100
 ```
@@ -91,6 +96,8 @@ coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 component-report
 coco-connect-hdl --instance-id HDL_1 schematic-validation
 coco-connect-hdl --instance-id HDL_1 component-detail U1
+coco-connect-hdl --instance-id HDL_1 design-overview
+coco-connect-hdl --instance-id HDL_1 page-overview 3
 coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
 coco-connect-hdl --instance-id HDL_1 circuit-block U100
 ```
@@ -108,6 +115,8 @@ arg
 
 `arg` is empty for most public HDL commands. For `component_detail`,
 `pin_connectivity`, and `circuit_block`, `arg` contains a RefDes such as `U1`.
+For `page_overview`, `arg` is empty for the active page or contains a page
+number/canonical page name.
 
 ## Response Format
 
