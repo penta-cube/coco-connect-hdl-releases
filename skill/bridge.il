@@ -118,7 +118,6 @@
               (cond
                 ((equal op "ping") (_coco_op_ping))
                 ((equal op "status") (_coco_op_status))
-                ((equal op "read_model") (_coco_op_read_model))
                 ((equal op "component_report") (_coco_op_component_report))
                 ((equal op "schematic_validation") (_coco_op_schematic_validation))
                 ((equal op "component_detail") (_coco_op_component_detail arg))

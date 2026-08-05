@@ -21,7 +21,6 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 
 - `ping`
 - `status`
-- `read_model`
 - `component_report`
 - `schematic_validation`
 - `component_detail`
@@ -77,7 +76,6 @@ coco-connect-hdl --pipe-name coco-hdl-<INSTANCE_ID> status
 coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
-coco-connect-hdl read-model
 coco-connect-hdl component-report
 coco-connect-hdl schematic-validation
 coco-connect-hdl component-detail U1
@@ -90,7 +88,6 @@ Session-scoped IPC examples:
 ```text
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
-coco-connect-hdl --instance-id HDL_1 read-model
 coco-connect-hdl --instance-id HDL_1 component-report
 coco-connect-hdl --instance-id HDL_1 schematic-validation
 coco-connect-hdl --instance-id HDL_1 component-detail U1
