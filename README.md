@@ -12,14 +12,17 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/hdl.il`
   - `skill/read_model.il`
   - `skill/component_detail.il`
+  - `skill/overview.il`
   - `skill/connectivity.il`
   - `skill/circuit_block.il`
+  - `skill/net_detail.il`
 
 ## Bridge Commands
 
 - `ping`
 - `status`
 - `component_detail`
+- `net_detail`
 - `design_overview`
 - `page_overview`
 - `pin_connectivity`
@@ -76,6 +79,7 @@ coco-connect-hdl ping
 coco-connect-hdl session-status
 coco-connect-hdl component-detail U1
 coco-connect-hdl component-detail U1 --page 3
+coco-connect-hdl net-detail VCC_3V3
 coco-connect-hdl design-overview
 coco-connect-hdl page-overview
 coco-connect-hdl page-overview 3
@@ -90,6 +94,7 @@ coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
 coco-connect-hdl --instance-id HDL_1 component-detail U1
 coco-connect-hdl --instance-id HDL_1 component-detail U1 --page 3
+coco-connect-hdl --instance-id HDL_1 net-detail VCC_3V3
 coco-connect-hdl --instance-id HDL_1 design-overview
 coco-connect-hdl --instance-id HDL_1 page-overview 3
 coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
@@ -108,7 +113,8 @@ arg
 ```
 
 `arg` is empty for most public HDL commands. For `component_detail`, `arg`
-contains `REFDES|PAGE`, where PAGE may be empty. For `pin_connectivity` and
+contains `REFDES|PAGE`, where PAGE may be empty. For `net_detail`, `arg`
+contains the logical net name. For `pin_connectivity` and
 `circuit_block`, `arg` contains a RefDes such as `U1`.
 For `page_overview`, `arg` is empty for the active page or contains a page
 number/canonical page name.
