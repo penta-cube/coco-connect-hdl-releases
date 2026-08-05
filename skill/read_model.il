@@ -5,6 +5,8 @@
 ;;; cnGetComp*/cnGetWire* accessors fail. cnGetProps + cnGetPropName/Value is
 ;;; the stable path already verified by the older list commands.
 
+(setq _coco_component_find_diagnostics nil)
+
 (defun _coco_json_field (name value)
   (strcat (_coco_json_string name) ":" value))
 
@@ -42,6 +44,9 @@
 (defun _coco_prop_owner_dbid_string (prop)
   (_coco_safe_dbid_string (_coco_safe_apply 'cnGetPropOwnerDbId (list prop))))
 
+(defun _coco_prop_dbid_string (prop)
+  (_coco_safe_dbid_string (_coco_safe_apply 'cnGetPropDbId (list prop))))
+
 (defun _coco_prop_owner_type_string (prop)
   (safeStr (_coco_safe_apply 'cnGetPropOwnerType (list prop))))
 
@@ -50,6 +55,7 @@
     (list
       (_coco_json_string_field "name" (safeGetProp prop "name"))
       (_coco_json_string_field "value" (safeGetProp prop "value"))
+      (_coco_json_string_field "property_dbid" (_coco_prop_dbid_string prop))
       (_coco_json_string_field "owner_dbid" (_coco_prop_owner_dbid_string prop))
       (_coco_json_string_field "owner_type" (_coco_prop_owner_type_string prop)))))
 
@@ -69,33 +75,74 @@
 
 (defun _coco_props_from_component_find (handle find_cmd)
   (let ((find_result nil)
+        (body_result nil)
         (include_result nil)
-        (group "")
+        (find_group "")
+        (body_group "")
+        (include_group "")
         (props nil)
+        (dbid_count 0)
         (result nil))
     (setq result (errset (_coco_send_cmd handle find_cmd) nil))
     (when result
       (setq find_result (car result))
-      (setq group (safeStr (_coco_safe_apply 'cnGetGroupName (list find_result)))))
-    (when (not (equal group ""))
-      (errset (_coco_send_cmd handle (sprintf nil "INCLUDE %s BODIES" group)) nil)
+      (setq find_group (safeStr (_coco_safe_apply 'cnGetGroupName (list find_result)))))
+    (when (not (equal find_group ""))
+      (setq body_result
+        (errset
+          (_coco_send_cmd handle (sprintf nil "INCLUDE %s BODIES" find_group))
+          nil))
+      (when body_result
+        (setq body_group
+          (safeStr (_coco_safe_apply 'cnGetGroupName (list (car body_result))))))
+      (when (equal body_group "")
+        (setq body_group find_group))
       (setq include_result
-        (errset (_coco_send_cmd handle (sprintf nil "INCLUDE %s PROPERTIES" group)) nil))
+        (errset
+          (_coco_send_cmd handle (sprintf nil "INCLUDE %s PROPERTIES" body_group))
+          nil))
       (when include_result
+        (setq include_group
+          (safeStr (_coco_safe_apply 'cnGetGroupName (list (car include_result)))))
         (setq props
           (_coco_safe_apply
             'cnGetProps
             (list (_coco_safe_apply 'cnGetGroupedObjectSet (list (car include_result)))))))
-      (_coco_cleanup_iterator handle (_coco_make_iterator group nil)))
+      (when (and
+              (not (equal include_group ""))
+              (not (equal include_group body_group))
+              (not (equal include_group find_group)))
+        (_coco_cleanup_iterator handle (_coco_make_iterator include_group nil)))
+      (when (and
+              (not (equal body_group ""))
+              (not (equal body_group find_group)))
+        (_coco_cleanup_iterator handle (_coco_make_iterator body_group nil)))
+      (_coco_cleanup_iterator handle (_coco_make_iterator find_group nil)))
+    (foreach prop props
+      (when (not (equal (_coco_prop_dbid_string prop) ""))
+        (setq dbid_count (add1 dbid_count))))
+    (setq _coco_component_find_diagnostics
+      (append
+        _coco_component_find_diagnostics
+        (list
+          (list
+            find_cmd
+            find_group
+            body_group
+            include_group
+            (length props)
+            dbid_count))))
     props))
 
 (defun _coco_prop_key (prop)
-  (strcat
-    (safeGetProp prop "name")
-    "="
-    (safeGetProp prop "value")
-    "@"
-    (_coco_prop_owner_dbid_string prop)))
+  (let ((dbid (_coco_prop_dbid_string prop))
+        (owner_dbid (_coco_prop_owner_dbid_string prop)))
+    (strcat
+      (safeGetProp prop "name")
+      "="
+      (safeGetProp prop "value")
+      "@"
+      (if (not (equal dbid "")) dbid owner_dbid))))
 
 (defun _coco_merge_unique_props (base extra)
   (let ((result base)

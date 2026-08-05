@@ -1,9 +1,8 @@
-;;; property_crud.il - direct component property CRUD and RefDes rename
+;;; property_crud.il - direct component property access and RefDes rename
 ;;;
 ;;; Public operations:
 ;;;   property_get
 ;;;   property_set
-;;;   property_del
 ;;;   rename
 
 (setq _coco_property_find_refdes "")
@@ -25,6 +24,23 @@
       (when (equal (safeGetProp prop "name") prop_name)
         (setq items (append items (list prop)))))
     items))
+
+(defun _coco_property_component_props (handle refdes)
+  (let ((props nil)
+        (extra nil))
+    ; CRUD must operate on properties included from the component body.
+    ; Direct find results may be searchable display/inherited objects whose
+    ; property DB IDs cannot be mutated reliably.
+    (setq props
+      (_coco_props_from_component_find
+        handle
+        (sprintf nil "find cds_location=%s" refdes)))
+    (setq extra
+      (_coco_props_from_component_find
+        handle
+        (sprintf nil "find $location=%s" refdes)))
+    (setq props (_coco_merge_unique_props props extra))
+    (if props props (_coco_component_props_for_refdes handle refdes))))
 
 (defun _coco_property_resolve_page_hint (handle dwg page_hint)
   (let ((found nil)
@@ -61,7 +77,7 @@
 (defun _coco_property_find_page_item (handle page_name)
   (let ((props nil))
     (when (not _coco_property_find_result)
-      (setq props (_coco_component_props_for_refdes handle _coco_property_find_refdes))
+      (setq props (_coco_property_component_props handle _coco_property_find_refdes))
       (when props
         (setq _coco_property_find_result (list page_name props))))))
 
@@ -72,6 +88,7 @@
         (page_name ""))
     (setq _coco_property_find_refdes (safeStr refdes))
     (setq _coco_property_find_result nil)
+    (setq _coco_component_find_diagnostics nil)
     (setq _coco_property_original_page (_coco_resolved_active_page_name handle dwg))
     (setq current_page _coco_property_original_page)
     (setq pages
@@ -108,7 +125,9 @@
         (group_name "")
         (result nil))
     (foreach prop props
-      (setq dbids (append dbids (list (cnGetPropDbId prop)))))
+      (let ((dbid (_coco_safe_apply 'cnGetPropDbId (list prop))))
+        (when dbid
+          (setq dbids (append dbids (list dbid))))))
     (when dbids
       (setq group (cnGroupObjects handle dbids))
       (when group
@@ -116,8 +135,7 @@
         (when (not (equal group_name ""))
           (setq result
             (errset (_coco_send_cmd handle (sprintf nil "Delete %s \n;" group_name)) nil))
-          (when (isCallable 'csFreeGroup)
-            (csFreeGroup handle group)))))
+          (_coco_cleanup_iterator handle (_coco_make_iterator group_name nil)))))
     (if result t nil)))
 
 (defun _coco_property_update_template (prop prop_name prop_value)
@@ -278,36 +296,6 @@
         (setq result
           (_coco_property_status_json status refdes page prop_name prop_value count)))
       (setq result (_coco_property_status_json "not_found" refdes "" prop_name prop_value 0)))
-    (_coco_property_restore_page handle)
-    result))
-
-(defun _coco_op_property_del (arg)
-  (let ((fields (_coco_property_request_fields arg))
-        (handle (_coco_import_handle))
-        (refdes "")
-        (prop_name "")
-        (page_hint "")
-        (found nil)
-        (page "")
-        (targets nil)
-        (ok nil)
-        (status "not_found")
-        (count 0)
-        (result ""))
-    (setq refdes (safeStr (_coco_nth 0 fields)))
-    (setq prop_name (safeStr (_coco_nth 1 fields)))
-    (setq page_hint (safeStr (_coco_nth 2 fields)))
-    (when (or (equal refdes "") (equal prop_name ""))
-      (error "INVALID_ARG" "property_del requires refdes and property_name"))
-    (setq found (_coco_property_find_component handle refdes page_hint))
-    (when found
-      (setq page (_coco_nth 0 found))
-      (setq targets (_coco_property_props_named (_coco_nth 1 found) prop_name))
-      (when targets
-        (setq count (length targets))
-        (setq ok (_coco_property_delete_props handle targets))
-        (setq status (if ok "deleted" "error"))))
-    (setq result (_coco_property_status_json status refdes page prop_name "" count))
     (_coco_property_restore_page handle)
     result))
 

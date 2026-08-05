@@ -119,10 +119,14 @@
 
 (setq _coco_conn_page_net_names nil)
 (setq _coco_conn_page_signal_props nil)
+(setq _coco_conn_page_named_wires nil)
+(setq _coco_conn_named_wire_queries nil)
 
 (defun _coco_conn_prop_attach_x (prop)
   (let ((point (_coco_safe_apply 'cnGetPropAttachXY (list prop)))
         (value nil))
+    (when (not point)
+      (setq point (_coco_safe_apply 'cnGetPropXY (list prop))))
     (when point
       (setq value (_coco_safe_apply 'cnGetPointX (list point))))
     (if value (safeStr value) "")))
@@ -130,6 +134,8 @@
 (defun _coco_conn_prop_attach_y (prop)
   (let ((point (_coco_safe_apply 'cnGetPropAttachXY (list prop)))
         (value nil))
+    (when (not point)
+      (setq point (_coco_safe_apply 'cnGetPropXY (list prop))))
     (when point
       (setq value (_coco_safe_apply 'cnGetPointY (list point))))
     (if value (safeStr value) "")))
@@ -142,21 +148,52 @@
     (_coco_prop_owner_dbid_string prop)
     (_coco_prop_owner_type_string prop)))
 
-(defun _coco_conn_signal_props_for_page (handle)
-  (let ((props nil)
-        (entries nil)
+(defun _coco_conn_signal_entry_key (entry)
+  (strcat
+    (safeStr (_coco_nth 0 entry))
+    "@"
+    (safeStr (_coco_nth 1 entry))
+    ","
+    (safeStr (_coco_nth 2 entry))))
+
+(defun _coco_conn_merge_signal_entries (base extra)
+  (let ((result base)
+        (keys nil)
+        (key ""))
+    (foreach entry result
+      (setq keys (append keys (list (_coco_conn_signal_entry_key entry)))))
+    (foreach entry extra
+      (setq key (_coco_conn_signal_entry_key entry))
+      (when (not (_coco_member_string key keys))
+        (setq result (append result (list entry)))
+        (setq keys (append keys (list key)))))
+    result))
+
+(defun _coco_conn_signal_entries_from_props (props)
+  (let ((entries nil)
+        (name "")
         (value ""))
+    (foreach prop props
+      (setq name (upperCase (safeGetProp prop "name")))
+      (setq value (safeGetProp prop "value"))
+      (when (and
+              (_coco_member_string name (list "SIG_NAME" "HDL_POWER" "HDL_TAP"))
+              (not (equal value "")))
+        (setq entries
+          (_coco_conn_merge_signal_entries
+            entries
+            (list (_coco_conn_signal_prop_entry prop))))))
+    entries))
+
+(defun _coco_conn_signal_props_for_page (handle)
+  (let ((props nil))
     (setq props
       (_coco_merge_unique_props props (_coco_props_from_find handle "find sig_name=*")))
     (setq props
       (_coco_merge_unique_props props (_coco_props_from_find handle "find hdl_power=*")))
     (setq props
       (_coco_merge_unique_props props (_coco_props_from_find handle "find hdl_tap=*")))
-    (foreach prop props
-      (setq value (safeGetProp prop "value"))
-      (when (not (equal value ""))
-        (setq entries (append entries (list (_coco_conn_signal_prop_entry prop))))))
-    entries))
+    (_coco_conn_signal_entries_from_props props)))
 
 (defun _coco_conn_signal_prop_names (entries)
   (let ((names nil)
@@ -168,6 +205,93 @@
               (not (_coco_member_string name names)))
         (setq names (append names (list name)))))
     names))
+
+(defun _coco_conn_named_wires_for_names (handle names)
+  (let ((items nil)
+        (iter nil)
+        (direct_wires nil)
+        (net_result nil)
+        (net_group "")
+        (net_object_set nil)
+        (net_wires nil)
+        (wire_result nil)
+        (wire_group "")
+        (wire_object_set nil)
+        (wires nil)
+        (find_group ""))
+    (setq _coco_conn_named_wire_queries nil)
+    ; `find sig_name=<name>` + cnGetWires is the same proven path used by
+    ; ui_navigate_net. It does not depend on property attach coordinates.
+    (foreach name names
+      (setq direct_wires nil)
+      (setq net_result nil)
+      (setq net_group "")
+      (setq net_object_set nil)
+      (setq net_wires nil)
+      (setq wire_result nil)
+      (setq wire_group "")
+      (setq wire_object_set nil)
+      (setq wires nil)
+      (setq find_group "")
+      (setq iter
+        (_coco_open_iterator
+          handle
+          (sprintf nil "find sig_name=%s" name)
+          'cnGetWires))
+      (setq direct_wires (_coco_iterator_items iter))
+      (setq find_group (_coco_iterator_group iter))
+      (when (not (equal find_group ""))
+        (setq net_result
+          (errset
+            (_coco_send_cmd handle (sprintf nil "INCLUDE %s NETS" find_group))
+            nil)))
+      (when net_result
+        (setq net_group
+          (safeStr (_coco_safe_apply 'cnGetGroupName (list (car net_result)))))
+        (setq net_object_set
+          (_coco_safe_apply 'cnGetGroupedObjectSet (list (car net_result))))
+        (when net_object_set
+          (setq net_wires (_coco_safe_apply 'cnGetWires (list net_object_set)))))
+      (when (equal net_group "")
+        (setq net_group find_group))
+      (when (not (equal net_group ""))
+        (setq wire_result
+          (errset
+            (_coco_send_cmd handle (sprintf nil "INCLUDE %s WIRES" net_group))
+            nil)))
+      (when wire_result
+        (setq wire_group
+          (safeStr (_coco_safe_apply 'cnGetGroupName (list (car wire_result)))))
+        (setq wire_object_set
+          (_coco_safe_apply 'cnGetGroupedObjectSet (list (car wire_result))))
+        (when wire_object_set
+          (setq wires (_coco_safe_apply 'cnGetWires (list wire_object_set)))))
+      (when (not wires)
+        (setq wires (if net_wires net_wires direct_wires)))
+      (setq _coco_conn_named_wire_queries
+        (append
+          _coco_conn_named_wire_queries
+          (list
+            (list
+              name
+              (length direct_wires)
+              (length net_wires)
+              (length wires)
+              find_group
+              wire_group))))
+      (foreach wire wires
+        (setq items (append items (list (list name wire)))))
+      (when (and
+              (not (equal wire_group ""))
+              (not (equal wire_group net_group))
+              (not (equal wire_group find_group)))
+        (_coco_cleanup_iterator handle (_coco_make_iterator wire_group nil)))
+      (when (and
+              (not (equal net_group ""))
+              (not (equal net_group find_group)))
+        (_coco_cleanup_iterator handle (_coco_make_iterator net_group nil)))
+      (_coco_cleanup_iterator handle iter))
+    items))
 
 (defun _coco_conn_between_int (value a b)
   (or

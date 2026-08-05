@@ -169,6 +169,28 @@
     (setq result (car (errset (cnlGetViewFileNames view_info) nil)))
     result))
 
+(defun _coco_view_source_path (handle dwg)
+  (let ((lib (safeStr (_coco_safe_apply 'cnGetDwgLibName (list dwg))))
+        (cell (safeStr (_coco_safe_apply 'cnGetDwgCellName (list dwg))))
+        (view (safeStr (_coco_safe_apply 'cnGetDwgViewName (list dwg))))
+        (vinfo nil)
+        (views nil)
+        (view_obj nil)
+        (path ""))
+    (when (equal lib "") (setq lib (safeStr (_coco_nth 6 dwg))))
+    (when (equal cell "") (setq cell (safeStr (_coco_nth 7 dwg))))
+    (when (equal view "") (setq view (safeStr (_coco_nth 8 dwg))))
+    (setq vinfo
+      (_coco_safe_apply 'cnlGetViewInfo (list handle (list (list lib cell view)))))
+    (when vinfo
+      (setq views (_coco_safe_apply 'cnlGetViews (list vinfo))))
+    (when views
+      (setq view_obj (car views)))
+    (when view_obj
+      (setq path
+        (safeStr (_coco_safe_apply 'cnlGetViewFilePath (list view_obj)))))
+    path))
+
 (defun _coco_design_page_names_from_files (handle dwg)
   (let ((lib "")
         (cell "")

@@ -29,7 +29,6 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 - `export_block`
 - `property_get`
 - `property_set`
-- `property_del`
 - `rename`
 - `quit`
 
@@ -92,7 +91,6 @@ coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
 coco-connect-hdl export-block U100 --output block.json
 coco-connect-hdl property-get U1 VALUE --page 3
 coco-connect-hdl property-set U1 VALUE 10k --page 3
-coco-connect-hdl property-del U1 TOLERANCE --page 3
 coco-connect-hdl rename R20_0 R20_1 --page 3
 ```
 
@@ -115,15 +113,18 @@ coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
 coco-connect-hdl --instance-id HDL_1 export-block U100
 coco-connect-hdl --instance-id HDL_1 property-get U1 VALUE --page 3
 coco-connect-hdl --instance-id HDL_1 property-set U1 VALUE 10k --page 3
-coco-connect-hdl --instance-id HDL_1 property-del U1 TOLERANCE --page 3
 coco-connect-hdl --instance-id HDL_1 rename R20_0 R20_1 --page 3
 ```
 
 ## Request Format
 
-`property_set`, `property_del`, and `rename` mutate the active design
+`property_set` and `rename` mutate the active design
 immediately. They do not provide dry-run, audit, conflict preflight, or
 rollback.
+
+Property deletion is not exposed. Design Entry HDL does not reliably return a
+mutable property DBID for either inherited or user-created instance properties,
+so the available delete command cannot be verified as a safe deletion path.
 
 The request file contains four newline-separated fields:
 
@@ -142,7 +143,7 @@ For `ui_navigate_part` and `ui_navigate_net`, `arg` contains `TARGET` or
 `TARGET|PAGE` when a page hint is provided.
 For `page_overview`, `arg` is empty for the active page or contains a page
 number/canonical page name.
-Property CRUD and rename arguments use `|`-separated fields; empty optional
+Property access and rename arguments use `|`-separated fields; empty optional
 fields use the reserved `__COCO_EMPTY__` sentinel.
 
 ## Response Format

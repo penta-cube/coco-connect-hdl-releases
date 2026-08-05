@@ -126,7 +126,6 @@
                 ((equal op "net_detail") (_coco_op_net_detail arg))
                 ((equal op "property_get") (_coco_op_property_get arg))
                 ((equal op "property_set") (_coco_op_property_set arg))
-                ((equal op "property_del") (_coco_op_property_del arg))
                 ((equal op "rename") (_coco_op_rename arg))
                 (t (error "UNKNOWN_OP" (_coco_to_string op))))
               t)))
