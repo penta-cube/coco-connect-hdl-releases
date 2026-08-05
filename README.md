@@ -83,6 +83,8 @@ coco-connect-hdl net-detail VCC_3V3
 coco-connect-hdl design-overview
 coco-connect-hdl page-overview
 coco-connect-hdl page-overview 3
+coco-connect-hdl ui-navigate-part U1 --page 3
+coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
 coco-connect-hdl pin-connectivity U1
 coco-connect-hdl circuit-block U100
 ```
@@ -97,6 +99,8 @@ coco-connect-hdl --instance-id HDL_1 component-detail U1 --page 3
 coco-connect-hdl --instance-id HDL_1 net-detail VCC_3V3
 coco-connect-hdl --instance-id HDL_1 design-overview
 coco-connect-hdl --instance-id HDL_1 page-overview 3
+coco-connect-hdl --instance-id HDL_1 ui-navigate-part U1 --page 3
+coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
 coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
 coco-connect-hdl --instance-id HDL_1 circuit-block U100
 ```
@@ -116,6 +120,8 @@ arg
 contains `REFDES|PAGE`, where PAGE may be empty. For `net_detail`, `arg`
 contains the logical net name. For `pin_connectivity` and
 `circuit_block`, `arg` contains a RefDes such as `U1`.
+For `ui_navigate_part` and `ui_navigate_net`, `arg` contains `TARGET` or
+`TARGET|PAGE` when a page hint is provided.
 For `page_overview`, `arg` is empty for the active page or contains a page
 number/canonical page name.
 
