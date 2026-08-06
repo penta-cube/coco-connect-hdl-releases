@@ -29,6 +29,42 @@
       (_coco_json_string_field "kind" kind)
       (_coco_json_string_field "target" target))))
 
+(defun _coco_ui_request_parts (arg)
+  (let ((parts (parseString (safeStr arg) "|")))
+    (list (safeStr (_coco_nth 0 parts)) (safeStr (_coco_nth 1 parts)))))
+
+(defun _coco_ui_resolve_page_hint (handle dwg page_hint)
+  (let ((found nil)
+        (page_num ""))
+    (foreach page_name (_coco_design_page_names handle dwg)
+      (setq page_num (_coco_page_number_from_name page_name))
+      (when (and
+              (not found)
+              (or
+                (equal page_hint page_name)
+                (equal page_hint page_num)
+                (equal (lowerCase page_hint) (strcat "page" page_num))))
+        (setq found page_name)))
+    found))
+
+(defun _coco_ui_candidate_pages (handle dwg active_page page_hint)
+  (let ((pages (_coco_design_page_names handle dwg))
+        (target_page nil)
+        (ordered nil))
+    (if (not (equal page_hint ""))
+      (progn
+        (setq target_page (_coco_ui_resolve_page_hint handle dwg page_hint))
+        (when (not target_page)
+          (error "PAGE_NOT_FOUND" (strcat "Page not found: " page_hint)))
+        (list target_page))
+      (progn
+        (when (_coco_member_string active_page pages)
+          (setq ordered (list active_page)))
+        (foreach page_name pages
+          (when (not (equal page_name active_page))
+            (setq ordered (append ordered (list page_name)))))
+        ordered))))
+
 (defun _coco_ui_parse_xy (xy)
   (let ((x "")
         (y ""))
@@ -86,11 +122,12 @@
         (x "")
         (y ""))
     (when (not _coco_ui_part_detail_result)
-      (setq _coco_component_tuple_cache (_coco_component_tuples handle))
       (setq props (_coco_component_props_for_refdes handle _coco_ui_part_detail_refdes))
-      (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
-      (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache))
-      (when (or props comp_tuple)
+      (when props
+        (setq xy (_coco_first_nonempty_prop_value props (list "XY")))
+        (when (not (equal xy ""))
+          (setq _coco_component_tuple_cache (_coco_component_tuples handle))
+          (setq comp_tuple (_coco_find_component_tuple_by_xy xy _coco_component_tuple_cache)))
         (when comp_tuple
           (setq x (safeStr (_coco_nth 2 comp_tuple)))
           (setq y (safeStr (_coco_nth 3 comp_tuple))))
@@ -100,23 +137,39 @@
             (setq y (safeStr (_coco_nth 1 parsed)))))
         (setq dbid (_coco_detail_component_dbid comp_tuple props))
         (setq path (_coco_first_nonempty_prop_value props (list "PATH" "Path")))
-        (setq _coco_ui_part_detail_result (list page_name dbid path x y))))))
+        (when (and (not (equal x "")) (not (equal y "")))
+          (setq _coco_ui_part_detail_result (list page_name dbid path x y)))))))
 
-(defun _coco_ui_find_part_detail (handle refdes)
-  (setq _coco_ui_part_detail_active_dwg (_coco_active_dwg handle))
-  (setq _coco_ui_part_detail_refdes (safeStr refdes))
-  (setq _coco_ui_part_detail_result nil)
-  (_coco_each_design_page
-    handle
-    _coco_ui_part_detail_active_dwg
-    (_coco_resolved_active_page_name handle _coco_ui_part_detail_active_dwg)
-    '_coco_ui_part_detail_page_item)
-  _coco_ui_part_detail_result)
+(defun _coco_ui_find_part_detail (handle refdes page_hint)
+  (let ((active_page "")
+        (current_page "")
+        (pages nil)
+        (page_name ""))
+    (setq _coco_ui_part_detail_active_dwg (_coco_active_dwg handle))
+    (setq _coco_ui_part_detail_refdes (safeStr refdes))
+    (setq _coco_ui_part_detail_result nil)
+    (setq active_page
+      (_coco_resolved_active_page_name handle _coco_ui_part_detail_active_dwg))
+    (setq current_page active_page)
+    (setq pages
+      (_coco_ui_candidate_pages
+        handle _coco_ui_part_detail_active_dwg active_page page_hint))
+    (while (and pages (not _coco_ui_part_detail_result))
+      (setq page_name (car pages))
+      (setq pages (cdr pages))
+      (when (not (equal page_name current_page))
+        (_coco_send_cmd handle (sprintf nil "nmapedit %s;" page_name))
+        (setq current_page page_name))
+      (_coco_ui_part_detail_page_item handle page_name))
+    (when (and
+            (not _coco_ui_part_detail_result)
+            (not (equal current_page active_page)))
+      (_coco_send_cmd handle (sprintf nil "nmapedit %s;" active_page)))
+    _coco_ui_part_detail_result))
 
-(defun _coco_ui_zoom_part (handle page_name x_str y_str)
+(defun _coco_ui_zoom_part (handle x_str y_str)
   (let ((x (atoi x_str))
         (y (atoi y_str)))
-    (_coco_ui_send_interactive handle (sprintf nil "nmapedit %s;" page_name))
     (_coco_ui_send_interactive handle
       (sprintf nil "ZOOM (%s,%s,1) (%s,%s,1)"
         (safeStr (difference x 700))
@@ -125,8 +178,10 @@
         (safeStr (difference y 700))))))
 
 (defun _coco_op_ui_navigate_part (arg)
-  (let ((handle (_coco_import_handle))
-        (refdes (safeStr arg))
+  (let ((parts (_coco_ui_request_parts arg))
+        (handle (_coco_import_handle))
+        (refdes "")
+        (page_hint "")
         (detail nil)
         (page_name "")
         (dbid "")
@@ -134,9 +189,11 @@
         (x_str "")
         (y_str "")
         (highlight_count 0))
+    (setq refdes (safeStr (_coco_nth 0 parts)))
+    (setq page_hint (safeStr (_coco_nth 1 parts)))
     (when (equal refdes "")
       (error "INVALID_ARG" "refdes is required"))
-    (setq detail (_coco_ui_find_part_detail handle refdes))
+    (setq detail (_coco_ui_find_part_detail handle refdes page_hint))
     (when detail
       (setq page_name (_coco_nth 0 detail))
       (setq dbid (_coco_nth 1 detail))
@@ -146,7 +203,7 @@
     (if (or (not detail) (equal page_name "") (equal x_str "") (equal y_str ""))
       (_coco_ui_json_not_found "part" refdes)
       (progn
-        (_coco_ui_zoom_part handle page_name x_str y_str)
+        (_coco_ui_zoom_part handle x_str y_str)
         (setq highlight_count (_coco_ui_try_part_highlight handle refdes path dbid x_str y_str))
         (_coco_ui_json_navigate
           "part"
@@ -214,7 +271,10 @@
 (defun _coco_ui_page_has_net (handle net_name)
   (let ((values nil))
     (setq values
-      (_coco_collect_values_from_find handle "find sig_name=*" (list "SIG_NAME")))
+      (_coco_collect_values_from_find
+        handle
+        (sprintf nil "find sig_name=%s" net_name)
+        (list "SIG_NAME")))
     (_coco_member_string net_name values)))
 
 (setq _coco_ui_net_detail_active_dwg nil)
@@ -231,27 +291,47 @@
                  (_coco_ui_page_has_net handle _coco_ui_net_detail_name))
         (setq _coco_ui_net_detail_result (list page_name nil "page"))))))
 
-(defun _coco_ui_find_net_detail (handle net_name)
-  (setq _coco_ui_net_detail_active_dwg (_coco_active_dwg handle))
-  (setq _coco_ui_net_detail_name (safeStr net_name))
-  (setq _coco_ui_net_detail_result nil)
-  (_coco_each_design_page
-    handle
-    _coco_ui_net_detail_active_dwg
-    (_coco_resolved_active_page_name handle _coco_ui_net_detail_active_dwg)
-    '_coco_ui_net_detail_page_item)
-  _coco_ui_net_detail_result)
+(defun _coco_ui_find_net_detail (handle net_name page_hint)
+  (let ((active_page "")
+        (current_page "")
+        (pages nil)
+        (page_name ""))
+    (setq _coco_ui_net_detail_active_dwg (_coco_active_dwg handle))
+    (setq _coco_ui_net_detail_name (safeStr net_name))
+    (setq _coco_ui_net_detail_result nil)
+    (setq active_page
+      (_coco_resolved_active_page_name handle _coco_ui_net_detail_active_dwg))
+    (setq current_page active_page)
+    (setq pages
+      (_coco_ui_candidate_pages
+        handle _coco_ui_net_detail_active_dwg active_page page_hint))
+    (while (and pages (not _coco_ui_net_detail_result))
+      (setq page_name (car pages))
+      (setq pages (cdr pages))
+      (when (not (equal page_name current_page))
+        (_coco_send_cmd handle (sprintf nil "nmapedit %s;" page_name))
+        (setq current_page page_name))
+      (_coco_ui_net_detail_page_item handle page_name))
+    (when (and
+            (not _coco_ui_net_detail_result)
+            (not (equal current_page active_page)))
+      (_coco_send_cmd handle (sprintf nil "nmapedit %s;" active_page)))
+    _coco_ui_net_detail_result))
 
 (defun _coco_op_ui_navigate_net (arg)
-  (let ((handle (_coco_import_handle))
-        (net_name (safeStr arg))
+  (let ((parts (_coco_ui_request_parts arg))
+        (handle (_coco_import_handle))
+        (net_name "")
+        (page_hint "")
         (detail nil)
         (page_name "")
         (box nil)
         (mode ""))
+    (setq net_name (safeStr (_coco_nth 0 parts)))
+    (setq page_hint (safeStr (_coco_nth 1 parts)))
     (when (equal net_name "")
       (error "INVALID_ARG" "net name is required"))
-    (setq detail (_coco_ui_find_net_detail handle net_name))
+    (setq detail (_coco_ui_find_net_detail handle net_name page_hint))
     (when detail
       (setq page_name (_coco_nth 0 detail))
       (setq box (_coco_nth 1 detail))
@@ -260,7 +340,6 @@
       (_coco_ui_json_not_found "net" net_name)
       (if (and box (equal mode "bbox"))
         (progn
-          (_coco_ui_send_interactive handle (sprintf nil "nmapedit %s;" page_name))
           (_coco_ui_try_name_highlight handle net_name)
           (_coco_ui_zoom_box_result
             handle
@@ -272,6 +351,5 @@
             (_coco_nth 3 box)
             "bbox"))
         (progn
-          (_coco_ui_send_interactive handle (sprintf nil "nmapedit %s;" page_name))
           (_coco_ui_try_name_highlight handle net_name)
           (_coco_ui_json_navigate "net" net_name page_name 1 "page"))))))

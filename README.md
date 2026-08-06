@@ -11,22 +11,25 @@ Release assets and runtime scripts for `coco-connect-hdl`.
   - `skill/util.il`
   - `skill/hdl.il`
   - `skill/read_model.il`
-  - `skill/component_report.il`
-  - `skill/schematic_validation.il`
   - `skill/component_detail.il`
+  - `skill/overview.il`
+  - `skill/property_crud.il`
   - `skill/connectivity.il`
-  - `skill/circuit_block.il`
+  - `skill/export_block.il`
+  - `skill/net_detail.il`
 
 ## Bridge Commands
 
 - `ping`
 - `status`
-- `read_model`
-- `component_report`
-- `schematic_validation`
 - `component_detail`
-- `pin_connectivity`
-- `circuit_block`
+- `net_detail`
+- `design_overview`
+- `page_overview`
+- `export_block`
+- `property_get`
+- `property_set`
+- `rename`
 - `quit`
 
 `coco-connect-hdl` uses file-based IPC because SKILL `infile` / `outfile`
@@ -77,28 +80,51 @@ coco-connect-hdl --pipe-name coco-hdl-<INSTANCE_ID> status
 coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
-coco-connect-hdl read-model
-coco-connect-hdl component-report
-coco-connect-hdl schematic-validation
 coco-connect-hdl component-detail U1
-coco-connect-hdl pin-connectivity U1
-coco-connect-hdl circuit-block U100
+coco-connect-hdl component-detail U1 --page 3
+coco-connect-hdl net-detail VCC_3V3
+coco-connect-hdl design-overview
+coco-connect-hdl page-overview
+coco-connect-hdl page-overview 3
+coco-connect-hdl ui-navigate-part U1 --page 3
+coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
+coco-connect-hdl export-block U100 --output block.json
+coco-connect-hdl property-get U1 VALUE --page 3
+coco-connect-hdl property-set U1 VALUE 10k --page 3
+coco-connect-hdl rename R20_0 R20_1 --page 3
 ```
+
+`component-detail` returns each pin's connected state, first wire DB id, and
+resolved net name. Pass that net name to `net-detail` for net-wide pins and
+wire coordinates.
 
 Session-scoped IPC examples:
 
 ```text
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
-coco-connect-hdl --instance-id HDL_1 read-model
-coco-connect-hdl --instance-id HDL_1 component-report
-coco-connect-hdl --instance-id HDL_1 schematic-validation
 coco-connect-hdl --instance-id HDL_1 component-detail U1
-coco-connect-hdl --instance-id HDL_1 pin-connectivity U1
-coco-connect-hdl --instance-id HDL_1 circuit-block U100
+coco-connect-hdl --instance-id HDL_1 component-detail U1 --page 3
+coco-connect-hdl --instance-id HDL_1 net-detail VCC_3V3
+coco-connect-hdl --instance-id HDL_1 design-overview
+coco-connect-hdl --instance-id HDL_1 page-overview 3
+coco-connect-hdl --instance-id HDL_1 ui-navigate-part U1 --page 3
+coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
+coco-connect-hdl --instance-id HDL_1 export-block U100
+coco-connect-hdl --instance-id HDL_1 property-get U1 VALUE --page 3
+coco-connect-hdl --instance-id HDL_1 property-set U1 VALUE 10k --page 3
+coco-connect-hdl --instance-id HDL_1 rename R20_0 R20_1 --page 3
 ```
 
 ## Request Format
+
+`property_set` and `rename` mutate the active design
+immediately. They do not provide dry-run, audit, conflict preflight, or
+rollback.
+
+Property deletion is not exposed. Design Entry HDL does not reliably return a
+mutable property DBID for either inherited or user-created instance properties,
+so the available delete command cannot be verified as a safe deletion path.
 
 The request file contains four newline-separated fields:
 
@@ -109,8 +135,16 @@ op
 arg
 ```
 
-`arg` is empty for most public HDL commands. For `component_detail`,
-`pin_connectivity`, and `circuit_block`, `arg` contains a RefDes such as `U1`.
+`arg` is empty for most public HDL commands. For `component_detail`, `arg`
+contains `REFDES|PAGE`, where PAGE may be empty. For `net_detail`, `arg`
+contains the logical net name. For `export_block`, `arg` contains a RefDes such
+as `U1`; the Rust command converts its minimal raw payload to Schematic Document v1.
+For `ui_navigate_part` and `ui_navigate_net`, `arg` contains `TARGET` or
+`TARGET|PAGE` when a page hint is provided.
+For `page_overview`, `arg` is empty for the active page or contains a page
+number/canonical page name.
+Property access and rename arguments use `|`-separated fields; empty optional
+fields use the reserved `__COCO_EMPTY__` sentinel.
 
 ## Response Format
 
