@@ -22,6 +22,7 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 
 - `ping`
 - `status`
+- `project_info`
 - `component_detail`
 - `net_detail`
 - `design_overview`
@@ -80,6 +81,7 @@ coco-connect-hdl --pipe-name coco-hdl-<INSTANCE_ID> status
 coco-connect-hdl status
 coco-connect-hdl ping
 coco-connect-hdl session-status
+coco-connect-hdl project-info
 coco-connect-hdl component-detail U1
 coco-connect-hdl component-detail U1 --page 3
 coco-connect-hdl net-detail VCC_3V3
@@ -103,6 +105,7 @@ Session-scoped IPC examples:
 ```text
 coco-connect-hdl --instance-id HDL_1 status
 coco-connect-hdl --instance-id HDL_1 ping
+coco-connect-hdl --instance-id HDL_1 project-info
 coco-connect-hdl --instance-id HDL_1 component-detail U1
 coco-connect-hdl --instance-id HDL_1 component-detail U1 --page 3
 coco-connect-hdl --instance-id HDL_1 net-detail VCC_3V3
@@ -145,6 +148,9 @@ For `page_overview`, `arg` is empty for the active page or contains a page
 number/canonical page name.
 Property access and rename arguments use `|`-separated fields; empty optional
 fields use the reserved `__COCO_EMPTY__` sentinel.
+
+`project_info` has an empty argument and returns active design metadata plus
+the current view's on-disk `view_source_path`.
 
 ## Response Format
 

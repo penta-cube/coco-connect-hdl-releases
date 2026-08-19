@@ -93,6 +93,29 @@
       (_coco_json_string_field "kind" (_coco_overview_dwg_kind dwg))
       (_coco_json_number_field "page_count" (length page_names)))))
 
+(defun _coco_project_design_json (dwg)
+  (_coco_json_object
+    (list
+      (_coco_json_string_field "id" (_coco_overview_dwg_id dwg))
+      (_coco_json_string_field "name" (_coco_overview_dwg_cell_name dwg))
+      (_coco_json_string_field "full_name" (_coco_overview_dwg_full_name dwg))
+      (_coco_json_string_field "lib_name" (_coco_overview_dwg_lib_name dwg))
+      (_coco_json_string_field "cell_name" (_coco_overview_dwg_cell_name dwg))
+      (_coco_json_string_field "view_name" (_coco_overview_dwg_view_name dwg)))))
+
+(defun _coco_op_project_info ()
+  (let ((handle (_coco_import_handle))
+        (dwg nil))
+    (setq dwg (_coco_active_dwg handle))
+    (when (not dwg)
+      (error "NO_ACTIVE_DESIGN" "No active HDL drawing was found"))
+    (_coco_json_object
+      (list
+        (_coco_json_field "design" (_coco_project_design_json dwg))
+        (_coco_json_string_field
+          "view_source_path"
+          (_coco_view_source_path handle dwg))))))
+
 (defun _coco_op_design_overview ()
   (let ((handle (_coco_import_handle))
         (dwg nil)
