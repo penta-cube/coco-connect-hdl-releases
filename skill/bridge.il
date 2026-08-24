@@ -19,7 +19,7 @@
 (unless (boundp '_coco_bridge_dir)
   (setq _coco_bridge_dir "."))
 
-(setq _coco_bridge_version "2026-04-22")
+(setq _coco_bridge_version "2026-08-19")
 
 (unless (isDir _coco_work_dir)
   (createDir _coco_work_dir))
@@ -117,6 +117,7 @@
               (cond
                 ((equal op "ping") (_coco_op_ping))
                 ((equal op "status") (_coco_op_status))
+                ((equal op "project_info") (_coco_op_project_info))
                 ((equal op "component_detail") (_coco_op_component_detail arg))
                 ((equal op "design_overview") (_coco_op_design_overview))
                 ((equal op "page_overview") (_coco_op_page_overview arg))
