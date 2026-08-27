@@ -90,6 +90,8 @@ coco-connect-hdl page-overview
 coco-connect-hdl page-overview 3
 coco-connect-hdl ui-navigate-part U1 --page 3
 coco-connect-hdl ui-navigate-net VCC_3V3 --page 3
+coco-connect-hdl ui-capture
+coco-connect-hdl ui-capture --output capture.png --delay-ms 500
 coco-connect-hdl export-block U100 --output block.json
 coco-connect-hdl property-get U1 VALUE --page 3
 coco-connect-hdl property-set U1 VALUE 10k --page 3
@@ -113,6 +115,7 @@ coco-connect-hdl --instance-id HDL_1 design-overview
 coco-connect-hdl --instance-id HDL_1 page-overview 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-part U1 --page 3
 coco-connect-hdl --instance-id HDL_1 ui-navigate-net VCC_3V3 --page 3
+coco-connect-hdl --instance-id HDL_1 ui-capture --output capture.png
 coco-connect-hdl --instance-id HDL_1 export-block U100
 coco-connect-hdl --instance-id HDL_1 property-get U1 VALUE --page 3
 coco-connect-hdl --instance-id HDL_1 property-set U1 VALUE 10k --page 3
