@@ -27,7 +27,8 @@
 
 (defun _coco_property_component_props (handle refdes)
   (let ((props nil)
-        (extra nil))
+        (extra nil)
+        (hard_location nil))
     ; CRUD must operate on properties included from the component body.
     ; Direct find results may be searchable display/inherited objects whose
     ; property DB IDs cannot be mutated reliably.
@@ -39,7 +40,12 @@
       (_coco_props_from_component_find
         handle
         (sprintf nil "find $location=%s" refdes)))
+    (setq hard_location
+      (_coco_props_from_component_find
+        handle
+        (sprintf nil "find location=%s" refdes)))
     (setq props (_coco_merge_unique_props props extra))
+    (setq props (_coco_merge_unique_props props hard_location))
     (if props props (_coco_component_props_for_refdes handle refdes))))
 
 (defun _coco_property_resolve_page_hint (handle dwg page_hint)
@@ -191,6 +197,55 @@
       (setq result (errset (cnCreateProps handle templates) nil)))
     (if result t nil)))
 
+(defun _coco_property_find_group_name (handle find_cmd)
+  (let ((result nil)
+        (group_name ""))
+    (setq result (errset (_coco_send_cmd handle find_cmd) nil))
+    (when result
+      (setq group_name
+        (safeStr (_coco_safe_apply 'cnGetGroupName (list (car result))))))
+    group_name))
+
+(defun _coco_property_refdes_changed (handle refdes)
+  (if (_coco_property_component_props handle refdes) t nil))
+
+(defun _coco_property_apply_refdes_command (handle from_refdes to_refdes)
+  (let ((group_name "")
+        (result nil)
+        (verified nil))
+    ; Automatic annotation exposes $LOCATION as a soft property. A fixed
+    ; RefDes is assigned by adding the hard LOCATION property (without '$')
+    ; to the selected component group.
+    (setq group_name
+      (_coco_property_find_group_name
+        handle
+        (sprintf nil "find $location=%s" from_refdes)))
+    (when (equal group_name "")
+      (setq group_name
+        (_coco_property_find_group_name
+          handle
+          (sprintf nil "find cds_location=%s" from_refdes))))
+    (when (not (equal group_name ""))
+      (setq result
+        (errset
+          (_coco_send_cmd
+            handle
+            (sprintf nil "Property %s LOCATION %s" group_name to_refdes))
+          nil))
+      (when result
+        (setq verified (_coco_property_refdes_changed handle to_refdes)))
+      (when (and (not verified) result)
+        (setq result
+          (errset
+            (_coco_send_cmd
+              handle
+              (sprintf nil "Property %s LOCATION=%s" group_name to_refdes))
+            nil))
+        (when result
+          (setq verified (_coco_property_refdes_changed handle to_refdes))))
+      (_coco_cleanup_iterator handle (_coco_make_iterator group_name nil)))
+    verified))
+
 (defun _coco_property_anchor_prop (props)
   (let ((found nil)
         (name ""))
@@ -211,6 +266,27 @@
           ?name prop_name
           ?value prop_value
           ?ownerDbId (cnGetPropOwnerDbId anchor)
+          ?attachXY (cnGetPropAttachXY anchor)
+          ?XY (cnGetPropXY anchor)
+          ?color "GREEN"
+          ?visibility 1
+          ?justification (cnGetPropJustification anchor)
+          ?size (cnGetPropSize anchor)
+          ?angle 0))
+      (setq result (errset (cnCreateProps handle (list template)) nil)))
+    (if result t nil)))
+
+(defun _coco_property_apply_hard_location (handle anchor refdes)
+  (let ((template nil)
+        (result nil))
+    ; Soft $LOCATION can have no owner/property DBID in DE-HDL 17.4. The
+    ; SecStandard-style template still attaches a hard property correctly
+    ; when it copies only the anchor's visual placement.
+    (when anchor
+      (setq template
+        (cnCreatePropTemplate
+          ?name "LOCATION"
+          ?value refdes
           ?attachXY (cnGetPropAttachXY anchor)
           ?XY (cnGetPropXY anchor)
           ?color "GREEN"
@@ -300,13 +376,25 @@
     result))
 
 (defun _coco_property_refdes_aliases (props)
-  (let ((items nil)
+  (let ((location_props nil)
+        (legacy_location_props nil)
+        (cds_location_props nil)
         (name ""))
     (foreach prop props
       (setq name (upperCase (safeGetProp prop "name")))
-      (when (_coco_member_string name (list "CDS_LOCATION" "$LOCATION"))
-        (setq items (append items (list prop)))))
-    items))
+      (cond
+        ((equal name "$LOCATION")
+          (setq location_props (append location_props (list prop))))
+        ((equal name "LOCATION")
+          (setq legacy_location_props (append legacy_location_props (list prop))))
+        ((equal name "CDS_LOCATION")
+          (setq cds_location_props (append cds_location_props (list prop))))))
+    ; Prefer the automatic soft $LOCATION as the visual anchor. LOCATION is
+    ; the fixed value, while CDS_LOCATION is only a legacy lookup fallback.
+    (cond
+      (location_props location_props)
+      (legacy_location_props legacy_location_props)
+      (t cds_location_props))))
 
 (defun _coco_op_rename (arg)
   (let ((fields (_coco_property_request_fields arg))
@@ -332,7 +420,18 @@
       (setq aliases (_coco_property_refdes_aliases (_coco_nth 1 found)))
       (when aliases
         (setq count (length aliases))
-        (setq ok (_coco_property_apply_values handle aliases to_refdes))
+        (setq ok
+          (_coco_property_apply_refdes_command handle from_refdes to_refdes))
+        ; If the command form is unavailable, create a hard LOCATION from the
+        ; soft-property anchor. Do not delete/recreate automatic $LOCATION.
+        (when (not ok)
+          (setq ok
+            (_coco_property_apply_hard_location
+              handle
+              (car aliases)
+              to_refdes)))
+        (when ok
+          (setq ok (_coco_property_refdes_changed handle to_refdes)))
         (setq status (if ok "renamed" "error"))))
     (setq result
       (_coco_json_object
