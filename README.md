@@ -128,6 +128,13 @@ coco-connect-hdl --instance-id HDL_1 rename R20_0 R20_1 --page 3
 immediately. They do not provide dry-run, audit, conflict preflight, or
 rollback.
 
+`rename` converts the automatically annotated soft `$LOCATION` RefDes into a
+fixed hard `LOCATION` value through the native component-group `Property`
+command. This avoids relying on mutable property DBIDs, which DE-HDL 17.4 can
+omit for soft `$LOCATION` properties. `CDS_LOCATION` is used only as a lookup
+or legacy fallback and is not grouped with `$LOCATION`. Verify a rename by
+reading `LOCATION`, not a `REFERENCE` property.
+
 Property deletion is not exposed. Design Entry HDL does not reliably return a
 mutable property DBID for either inherited or user-created instance properties,
 so the available delete command cannot be verified as a safe deletion path.

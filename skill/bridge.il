@@ -19,7 +19,7 @@
 (unless (boundp '_coco_bridge_dir)
   (setq _coco_bridge_dir "."))
 
-(setq _coco_bridge_version "2026-08-19")
+(setq _coco_bridge_version "2026-09-15.3")
 
 (unless (isDir _coco_work_dir)
   (createDir _coco_work_dir))
