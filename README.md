@@ -2,6 +2,16 @@
 
 Release assets and runtime scripts for `coco-connect-hdl`.
 
+## Latest Release
+
+- [v0.1.10](https://github.com/penta-cube/coco-connect-hdl-releases/releases/tag/v0.1.10) (2026-10-28)
+- Source: [`f99bd3794ba9f71014485ad8078b78b547b3f01b`](https://github.com/penta-cube/coco-connect-hdl/commit/f99bd3794ba9f71014485ad8078b78b547b3f01b)
+- Pinned schematic model: [`b04d47fe1ef5fbcd96d3a46f392b9c48228aa669`](https://github.com/penta-cube/coco-schematic-model/commit/b04d47fe1ef5fbcd96d3a46f392b9c48228aa669)
+- Updates the shared schematic model and restores build compatibility with its optional color and stroke-width fields, preserving default HDL rendering.
+- SKILL bridge scripts are unchanged from v0.1.9.
+- Validation: `cargo test --locked` (48 passed), `cargo build --release --locked`, and executable `--help` smoke check.
+- `coco-connect-hdl.exe` SHA-256: `21ec549f44a04d780ed8b8b7ecd3dbe9fd575a0d04492bebfb34146b57e58d74`.
+
 ## Contents
 
 - Windows executable release asset:
