@@ -1,0 +1,78 @@
+{
+  "version": "v0.1.11",
+  "source_repository": "penta-cube/coco-connect-hdl",
+  "source_sha": "94175395be6067e7086d93aec6b402c4a336c24a",
+  "schematic_model_sha": "7411c24f0f8b3454daeff3940398c4174d717024",
+  "runtime_repository_sha": "ae9b1e3a435df628de2f46b576c7ffa4e716bcf6",
+  "platforms": [
+    "windows-x64"
+  ],
+  "validation": "local tests, release build, package smoke",
+  "assets": [
+    {
+      "name": "bridge.il",
+      "bytes": 6207,
+      "sha256": "1205928a59ceac01841977dcec53f9236a3f6335fea7bd5f874d39f0bd75f2f5"
+    },
+    {
+      "name": "coco-connect-hdl-windows-x64.zip",
+      "bytes": 1842573,
+      "sha256": "3ef83608b0cd790aa0124f33bc609b7127bac9f4eeb49ceaab87043621ad2d6f"
+    },
+    {
+      "name": "coco-connect-hdl.exe",
+      "bytes": 4739584,
+      "sha256": "5945f895a5bc3392651c3fd91c87b50ecd15720f199d5f81f7b18164b8072fea"
+    },
+    {
+      "name": "component_detail.il",
+      "bytes": 11342,
+      "sha256": "857dec797e3f9fdd62d18f712f9628439808a96b1e666238ce0a8afbc0201366"
+    },
+    {
+      "name": "connectivity.il",
+      "bytes": 21084,
+      "sha256": "da3c839afaf419d1b249585353b424e2f0c2a2cc92232d625047c416732b3136"
+    },
+    {
+      "name": "export_block.il",
+      "bytes": 21497,
+      "sha256": "a7ea3639a3f3d35903224fd126f49d193e98a93b718cad6e3ed242daa8a92941"
+    },
+    {
+      "name": "hdl.il",
+      "bytes": 10229,
+      "sha256": "895666d9710055a64679b9edbb25c75044b75293bfd949e64e4ef26ac7a84dd9"
+    },
+    {
+      "name": "net_detail.il",
+      "bytes": 9016,
+      "sha256": "dccd0e3aaa44616fdaf0e1f8b907222219387dc81e5d52b359f830eafb8346e5"
+    },
+    {
+      "name": "overview.il",
+      "bytes": 11173,
+      "sha256": "127db970a0f8590030988f6ee81b8b1692d3400322058fdd68ba1a9b12d27a25"
+    },
+    {
+      "name": "property_crud.il",
+      "bytes": 17036,
+      "sha256": "a3ca8e5abf84ad5f25fbb12eb56a6b519cbfad4590a31dace656fc5fbe524a70"
+    },
+    {
+      "name": "read_model.il",
+      "bytes": 13173,
+      "sha256": "c9f16e6f3a616b98f03035ddd75d4514cea319a1965ba83e84b91cf16054783c"
+    },
+    {
+      "name": "ui_navigation.il",
+      "bytes": 13682,
+      "sha256": "5add2af47e7bb8bdd36dcfe4efbca39bd16138806b0cbd9e914c7f851dc4ca02"
+    },
+    {
+      "name": "util.il",
+      "bytes": 4282,
+      "sha256": "067e21bdc531247a3ce86004bb8fe60c8f3ebfe9aad40df1fe696555b9f91cd5"
+    }
+  ]
+}
