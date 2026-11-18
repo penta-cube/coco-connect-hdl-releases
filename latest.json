@@ -1,13 +1,24 @@
 {
-  "version": "v0.1.11",
+  "version": "v0.1.12",
   "source_repository": "penta-cube/coco-connect-hdl",
-  "source_sha": "94175395be6067e7086d93aec6b402c4a336c24a",
-  "schematic_model_sha": "7411c24f0f8b3454daeff3940398c4174d717024",
-  "runtime_repository_sha": "ae9b1e3a435df628de2f46b576c7ffa4e716bcf6",
+  "source_sha": "9449161086289b6d32ccb653891bb425f17d05ad",
+  "schematic_model_sha": "89fc81dbf559d798d18894f2cf5ef98bfda961f9",
+  "source_ref": "main",
   "platforms": [
     "windows-x64"
   ],
-  "validation": "local tests, release build, package smoke",
+  "validation": "cargo test --locked; cargo build --release --locked; CLI --help",
+  "test_counts": [
+    [
+      "51",
+      "0",
+      "0"
+    ]
+  ],
+  "excludes_unmerged_prs": [
+    "penta-cube/coco-connect-syscap#6",
+    "penta-cube/cubic-ai-chat#477"
+  ],
   "assets": [
     {
       "name": "bridge.il",
@@ -16,13 +27,13 @@
     },
     {
       "name": "coco-connect-hdl-windows-x64.zip",
-      "bytes": 1842573,
-      "sha256": "3ef83608b0cd790aa0124f33bc609b7127bac9f4eeb49ceaab87043621ad2d6f"
+      "bytes": 1858401,
+      "sha256": "b536bb591a7112937a5d3e96ae6e4caaa1221a52e8a621b4a18e91ad760b31de"
     },
     {
       "name": "coco-connect-hdl.exe",
-      "bytes": 4739584,
-      "sha256": "5945f895a5bc3392651c3fd91c87b50ecd15720f199d5f81f7b18164b8072fea"
+      "bytes": 4769280,
+      "sha256": "cb623cc0d067bcb512b85fa7c206913196133b5a7e4d0e73c106aa563b598027"
     },
     {
       "name": "component_detail.il",
@@ -74,5 +85,6 @@
       "bytes": 4282,
       "sha256": "067e21bdc531247a3ce86004bb8fe60c8f3ebfe9aad40df1fe696555b9f91cd5"
     }
-  ]
+  ],
+  "runtime_repository_sha": "5db4268cdc29fddd8433314ab8555cf855416941"
 }
