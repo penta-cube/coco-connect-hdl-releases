@@ -16,17 +16,9 @@ Release assets and runtime scripts for `coco-connect-hdl`.
 
 - Windows executable release asset:
   - `coco-connect-hdl.exe`
-- HDL SKILL bridge scripts:
-  - `skill/bridge.il`
-  - `skill/util.il`
-  - `skill/hdl.il`
-  - `skill/read_model.il`
-  - `skill/component_detail.il`
-  - `skill/overview.il`
-  - `skill/property_crud.il`
-  - `skill/connectivity.il`
-  - `skill/export_block.il`
-  - `skill/net_detail.il`
+- HDL SKILL runtime:
+  - `skill/bridge.il`, the startup script
+  - `skill/bridge.ile` and the protected `.ile` modules
 
 ## Bridge Commands
 
@@ -64,7 +56,7 @@ Manual SKILL startup in the HDL CommandConsole:
 system("cmd /c cd /d C:\\path\\to\\skill && start /b cnskill.exe -i -nongraph bridge.il")
 ```
 
-`bridge.il` loads the other `*.il` files from `_coco_bridge_dir`; by default
+`bridge.il` loads the protected `*.ile` files from `_coco_bridge_dir`; by default
 that is the current directory. If a wrapper loads `bridge.il` by absolute path,
 set `_coco_bridge_dir` first.
 
