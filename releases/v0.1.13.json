@@ -1,0 +1,91 @@
+{
+  "version": "v0.1.13",
+  "source_repository": "penta-cube/coco-connect-hdl",
+  "source_sha": "1220925debd9e80a7a354cae0199f2b5e9ca91bc",
+  "schematic_model_sha": "89fc81dbf559d798d18894f2cf5ef98bfda961f9",
+  "source_ref": "main",
+  "platforms": [
+    "windows-x64"
+  ],
+  "validation": "cargo test --locked; cargo build --release --locked; CLI --help; Cadence Design Entry HDL 25.1 cnskill 및 CLI IPC ping",
+  "test_counts": [
+    [
+      "51",
+      "0",
+      "0"
+    ]
+  ],
+  "assets": [
+    {
+      "name": "bridge.il",
+      "bytes": 312,
+      "sha256": "83482a220a2f7a51636e9040d5c53e4c503040ffa5b0af15667039f3ba1040e1"
+    },
+    {
+      "name": "bridge.ile",
+      "bytes": 4667,
+      "sha256": "9b516d55452f2b7bfd6502809a4f93c22b09c8e2632aa6b9d422c99c1df2a1c9"
+    },
+    {
+      "name": "coco-connect-hdl-windows-x64.zip",
+      "bytes": 1934931,
+      "sha256": "29e75e9c081e8f66b0fce7bd0564e84a3575c9795c6c9ba64d15ed221bc34fa5"
+    },
+    {
+      "name": "coco-connect-hdl.exe",
+      "bytes": 4769280,
+      "sha256": "a6eea5fe4642b17a0ebfc9bf6d4298e538fe705b5198b7ec8fdeb98f22ce6ff4"
+    },
+    {
+      "name": "component_detail.ile",
+      "bytes": 9511,
+      "sha256": "8225cecf4b9416acb18e67d4c7200aee665af90b1a248a47938217644151b8dc"
+    },
+    {
+      "name": "connectivity.ile",
+      "bytes": 17386,
+      "sha256": "d150ec9cace3b57c80b36c6a34cbcbcc4bfe4387b8e617da48f4f00cdd856104"
+    },
+    {
+      "name": "export_block.ile",
+      "bytes": 17403,
+      "sha256": "960d8dce65f3b52bc18aa8f5f09a9bcd02acee93da1144be1b4d731f187d3307"
+    },
+    {
+      "name": "hdl.ile",
+      "bytes": 8954,
+      "sha256": "b1046d2d7fc4a886dc6a4454d001e6260130908096e362ec37fd800c8280def3"
+    },
+    {
+      "name": "net_detail.ile",
+      "bytes": 6980,
+      "sha256": "65fc36e87c52e872434a2ea3b101ec23ddca71e567b839d8f6ce14bc86a7915e"
+    },
+    {
+      "name": "overview.ile",
+      "bytes": 9447,
+      "sha256": "d51179307a8df4102957f5c3af65075c7ddc774b1f557d0f43f70b3460870ed1"
+    },
+    {
+      "name": "property_crud.ile",
+      "bytes": 12934,
+      "sha256": "9cf490235c379b0d2bbe8f7508df472483ffbb80407b689975670a5c7540f456"
+    },
+    {
+      "name": "read_model.ile",
+      "bytes": 11161,
+      "sha256": "55abd648422737ad111023e661b967b9853125a9b50acb54255b671633a84a63"
+    },
+    {
+      "name": "ui_navigation.ile",
+      "bytes": 11301,
+      "sha256": "2103b5acad18aedf6c4dec926a49729be38d5705694201bce8641e98c93462e1"
+    },
+    {
+      "name": "util.ile",
+      "bytes": 3411,
+      "sha256": "b71537c1d636204330235eec875561cf0c9b556cc70ce67f4ba2ec6c271166e2"
+    }
+  ],
+  "runtime_repository_sha": "aa5b5402616deaf3c4c6a7d332bdcb419d53395b"
+}
